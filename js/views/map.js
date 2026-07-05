@@ -28,6 +28,12 @@ export function initMapView(_dormId, uid) {
   });
   store.subscribe("rooms", renderRooms);
   store.subscribe("incomingKnocks", renderIncomingKnocks);
+
+  const settingsBtn = document.getElementById("map-settings-btn");
+  const settingsPanel = document.getElementById("map-settings-panel");
+  settingsBtn.addEventListener("click", () => {
+    settingsPanel.hidden = !settingsPanel.hidden;
+  });
 }
 
 function memberName(uid) {
@@ -130,7 +136,7 @@ function renderRoomActions() {
   const members = store.get("members") || [];
   const myKnock = myOutgoingKnock();
   roomActionsEl.innerHTML = "";
-  roomActionsEl.className = "room-switcher";
+  roomActionsEl.className = "map-hud-bottom room-switcher";
 
   const commonBtn = document.createElement("button");
   commonBtn.textContent = "客廳(公共區)";

@@ -1,4 +1,16 @@
+/* 整個 app.html 用固定滿版視窗排版(像遊戲畫面固定、不是網頁往下長)：
+   header/tab-bar 高度固定，中間 .app-main 佔滿剩下空間，地圖畫面完全貼齊、不捲動，
+   控制項(敲門通知、房間切換、設定)都疊在地圖上面，像遊戲 HUD 一樣。 */
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .app-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -14,22 +26,76 @@
 }
 
 .app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}
+
+.app-view {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
   padding: var(--space-3);
-  padding-bottom: 80px; /* 避免內容被底部 tab-bar 遮住 */
 }
 
 .app-view[hidden] {
   display: none;
 }
 
+#view-map {
+  overflow: hidden;
+  padding: 0;
+}
+
 /* --- 地圖 --- */
 .room-map {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 4;
+  position: absolute;
+  inset: 0;
   background: #d8ccb4;
+}
+
+.map-hud-top {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  right: var(--space-2);
+  z-index: 5;
+}
+
+.map-settings-btn {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 6;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-text);
+  border: 1px solid var(--color-muted);
+}
+
+.map-settings-panel {
+  position: absolute;
+  top: calc(var(--space-2) + 44px);
+  right: var(--space-2);
+  left: var(--space-2);
+  z-index: 6;
+  max-height: 60%;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.97);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  padding: var(--space-3);
+}
+
+.map-hud-bottom {
+  position: absolute;
+  bottom: var(--space-2);
+  left: var(--space-2);
+  right: var(--space-2);
+  z-index: 5;
+  overflow-x: auto;
 }
 
 .room-box {
@@ -88,15 +154,16 @@
 
 .room-switcher {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
 }
 
 .room-switcher button {
-  background: #fff;
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.9);
   color: var(--color-text);
   border: 1px solid var(--color-primary);
+  white-space: nowrap;
 }
 
 .room-switcher button:disabled {
@@ -268,10 +335,7 @@
 
 /* --- 底部 Tab Bar --- */
 .tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex: 0 0 auto;
   display: flex;
   background: #fff;
   border-top: 1px solid #eee;

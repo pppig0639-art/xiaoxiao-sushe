@@ -24,34 +24,42 @@
 
   <main class="app-main">
     <section id="view-map" class="app-view">
-      <div id="knock-banner-list">
-        <!-- views/map.js: 有人敲門時在這裡顯示同意/拒絕 -->
-      </div>
-      <p id="my-knock-status" class="knock-status" hidden></p>
       <div id="room-map" class="room-map">
         <!-- views/map.js 依 store 'members' 資料渲染 -->
       </div>
-      <div id="room-actions">
-        <!-- views/map.js：客廳／我的房間／敲每個人的門 -->
+
+      <div id="map-hud-top" class="map-hud-top">
+        <div id="knock-banner-list">
+          <!-- views/map.js: 有人敲門時在這裡顯示同意/拒絕 -->
+        </div>
+        <p id="my-knock-status" class="knock-status" hidden></p>
       </div>
 
-      <div class="ambience-bar">
-        <label for="ambience-select">背景音效</label>
-        <select id="ambience-select">
-          <option value="off">關閉</option>
-          <option value="white">白噪音</option>
-          <option value="rain">雨聲</option>
-          <option value="typing">打字音效</option>
-        </select>
-      </div>
+      <button id="map-settings-btn" type="button" class="map-settings-btn" aria-label="設定">⚙</button>
 
-      <div id="decoration-editor" class="decoration-editor" hidden>
-        <p class="decoration-editor-title">裝飾我的房間</p>
-        <div id="decoration-options" class="decoration-options">
-          <!-- views/decorations.js：可勾選的裝飾項目 -->
+      <div id="map-settings-panel" class="map-settings-panel" hidden>
+        <div class="ambience-bar">
+          <label for="ambience-select">背景音效</label>
+          <select id="ambience-select">
+            <option value="off">關閉</option>
+            <option value="white">白噪音</option>
+            <option value="rain">雨聲</option>
+            <option value="typing">打字音效</option>
+          </select>
+        </div>
+
+        <button id="edit-decorations-btn" type="button" class="link-btn">裝飾我的房間</button>
+        <div id="decoration-editor" class="decoration-editor" hidden>
+          <p class="decoration-editor-title">裝飾我的房間</p>
+          <div id="decoration-options" class="decoration-options">
+            <!-- views/decorations.js：可勾選的裝飾項目 -->
+          </div>
         </div>
       </div>
-      <button id="edit-decorations-btn" type="button" class="link-btn">裝飾我的房間</button>
+
+      <div id="room-actions" class="map-hud-bottom">
+        <!-- views/map.js：客廳／我的房間／敲每個人的門 -->
+      </div>
     </section>
 
     <section id="view-duties" class="app-view" hidden>
