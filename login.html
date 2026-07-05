@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>小小宿舍 - 登入</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+  <main class="login-screen">
+    <h1 class="login-title">小小宿舍</h1>
+
+    <div class="login-mode-switch">
+      <button id="mode-login-btn" class="is-active" type="button">登入</button>
+      <button id="mode-register-btn" type="button">註冊新帳號</button>
+    </div>
+
+    <form id="auth-form" class="login-step">
+      <input id="display-name-input" type="text" placeholder="你的暱稱" autocomplete="nickname" hidden />
+      <input id="email-input" type="email" placeholder="Email" autocomplete="email" required />
+      <input id="password-input" type="password" placeholder="密碼(至少 6 碼)" autocomplete="current-password" required minlength="6" />
+      <button id="auth-submit" type="submit">登入</button>
+      <p id="auth-error" class="error-text" hidden></p>
+    </form>
+
+    <p class="login-divider">或</p>
+    <button id="google-login-btn" type="button" class="google-btn">用 Google 帳號登入</button>
+    <button id="guest-login-btn" type="button" class="guest-btn">先試用看看(訪客)</button>
+    <p class="guest-hint">訪客帳號可以自己建立寢室試玩，但不能加入別人的寢室，之後想跟室友一起玩要記得註冊正式帳號喔</p>
+  </main>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>

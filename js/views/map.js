@@ -1,0 +1,177 @@
+// 地圖與小人物 + 敲門系統。
+// 客廳跟自己的房間可以直接進，別人的房間要「敲門」，對方同意才會被自動移進去。
+
+import * as store from "../store.js";
+import { updateCurrentRoom } from "../db/members.js";
+import {
+  requestKnock,
+  respondToKnock,
+  deleteKnock,
+  listenMyKnockStatus,
+} from "../db/rooms.js";
+
+let mapEl = null;
+let roomActionsEl = null;
+let knockBannerListEl = null;
+let myKnockStatusEl = null;
+let currentUid = null;
+let dormId = null;
+
+export function initMapView(_dormId, uid) {
+  dormId = _dormId;
+  currentUid = uid;
+  mapEl = document.getElementById("room-map");
+  roomActionsEl = document.getElementById("room-actions");
+  knockBannerListEl = document.getElementById("knock-banner-list");
+  myKnockStatusEl = document.getElementById("my-knock-status");
+
+  store.subscribe("members", () => {
+    renderRooms();
+    renderRoomActions();
+  });
+  store.subscribe("incomingKnocks", renderIncomingKnocks);
+  store.subscribe("myKnockStatus", () => {
+    renderMyKnockStatus();
+    renderRoomActions();
+  });
+}
+
+function memberName(uid) {
+  const members = store.get("members") || [];
+  const m = members.find((x) => x.id === uid);
+  return m ? m.displayName : "對方";
+}
+
+function buildRoomRects(members) {
+  const ids = members.map((m) => m.id).sort();
+  const rects = {};
+  const n = Math.max(ids.length, 1);
+
+  ids.forEach((uid, i) => {
+    rects[uid] = { left: (i * 100) / n, top: 0, width: 100 / n, height: 42 };
+  });
+  rects.common = { left: 0, top: 46, width: 100, height: 54 };
+  return rects;
+}
+
+function renderRooms() {
+  const members = store.get("members") || [];
+  mapEl.innerHTML = "";
+  const rects = buildRoomRects(members);
+
+  Object.entries(rects).forEach(([roomId, rect]) => {
+    const box = document.createElement("div");
+    box.className = `room-box ${roomId === "common" ? "room-box-common" : "room-box-private"}`;
+    box.style.left = `${rect.left}%`;
+    box.style.top = `${rect.top}%`;
+    box.style.width = `${rect.width}%`;
+    box.style.height = `${rect.height}%`;
+
+    const label = document.createElement("span");
+    label.className = "room-label";
+    label.textContent = roomId === "common" ? "客廳" : `${memberName(roomId)}的房間`;
+    box.appendChild(label);
+    mapEl.appendChild(box);
+  });
+
+  const byRoom = {};
+  members.forEach((m) => {
+    const room = rects[m.currentRoomId] ? m.currentRoomId : "common";
+    (byRoom[room] = byRoom[room] || []).push(m);
+  });
+
+  Object.entries(byRoom).forEach(([roomId, roomMembers]) => {
+    const rect = rects[roomId];
+    const centerLeft = rect.left + rect.width / 2;
+    const centerTop = rect.top + rect.height / 2;
+    const spacing = 9;
+    const startOffset = -((roomMembers.length - 1) * spacing) / 2;
+
+    roomMembers.forEach((member, index) => {
+      const avatar = document.createElement("div");
+      avatar.className = `avatar status-${member.status || "offline"}`;
+      avatar.style.left = `${centerLeft + startOffset + index * spacing}%`;
+      avatar.style.top = `${centerTop}%`;
+      avatar.textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
+      avatar.title = `${member.displayName || "?"} - ${member.mood || ""}`;
+      mapEl.appendChild(avatar);
+    });
+  });
+}
+
+function renderRoomActions() {
+  const members = store.get("members") || [];
+  const myKnock = store.get("myKnockStatus");
+  roomActionsEl.innerHTML = "";
+  roomActionsEl.className = "room-switcher";
+
+  const commonBtn = document.createElement("button");
+  commonBtn.textContent = "客廳(公共區)";
+  commonBtn.addEventListener("click", () => updateCurrentRoom(dormId, currentUid, "common"));
+  roomActionsEl.appendChild(commonBtn);
+
+  const ownRoomBtn = document.createElement("button");
+  ownRoomBtn.textContent = "我的房間";
+  ownRoomBtn.addEventListener("click", () => updateCurrentRoom(dormId, currentUid, currentUid));
+  roomActionsEl.appendChild(ownRoomBtn);
+
+  members
+    .filter((m) => m.id !== currentUid)
+    .forEach((member) => {
+      const btn = document.createElement("button");
+      const isPendingThisRoom = myKnock && myKnock.roomId === member.id && myKnock.status === "pending";
+      btn.textContent = isPendingThisRoom ? `已敲 ${member.displayName} 的門...` : `敲 ${member.displayName} 的門`;
+      btn.disabled = isPendingThisRoom;
+      btn.addEventListener("click", () => {
+        requestKnock(dormId, member.id, currentUid, memberName(currentUid));
+        listenMyKnockStatus(dormId, member.id, currentUid);
+      });
+      roomActionsEl.appendChild(btn);
+    });
+}
+
+function renderMyKnockStatus() {
+  const status = store.get("myKnockStatus");
+  if (!status) {
+    myKnockStatusEl.hidden = true;
+    return;
+  }
+
+  myKnockStatusEl.hidden = false;
+  if (status.status === "pending") {
+    myKnockStatusEl.textContent = `已敲 ${memberName(status.roomId)} 的門，等待回應...`;
+  } else if (status.status === "approved") {
+    myKnockStatusEl.textContent = `${memberName(status.roomId)} 讓你進來了！`;
+    updateCurrentRoom(dormId, currentUid, status.roomId);
+    deleteKnock(dormId, status.roomId, currentUid);
+  } else if (status.status === "denied") {
+    myKnockStatusEl.textContent = `${memberName(status.roomId)} 現在不方便`;
+    deleteKnock(dormId, status.roomId, currentUid);
+  }
+}
+
+function renderIncomingKnocks(knocks) {
+  knockBannerListEl.innerHTML = "";
+  knocks.forEach((knock) => {
+    const banner = document.createElement("div");
+    banner.className = "knock-banner";
+
+    const text = document.createElement("span");
+    text.textContent = `${knock.requesterName} 想進來`;
+
+    const actions = document.createElement("div");
+    actions.className = "knock-actions";
+
+    const approveBtn = document.createElement("button");
+    approveBtn.textContent = "同意";
+    approveBtn.addEventListener("click", () => respondToKnock(dormId, currentUid, knock.requesterUid, true));
+
+    const denyBtn = document.createElement("button");
+    denyBtn.textContent = "拒絕";
+    denyBtn.addEventListener("click", () => respondToKnock(dormId, currentUid, knock.requesterUid, false));
+
+    actions.append(approveBtn, denyBtn);
+    banner.append(text, actions);
+    knockBannerListEl.appendChild(banner);
+  });
+}

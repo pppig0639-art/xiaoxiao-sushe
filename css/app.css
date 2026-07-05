@@ -1,0 +1,220 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.dorm-name {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.app-main {
+  padding: var(--space-3);
+  padding-bottom: 80px; /* 避免內容被底部 tab-bar 遮住 */
+}
+
+.app-view[hidden] {
+  display: none;
+}
+
+/* --- 地圖 --- */
+.room-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #d8ccb4;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.room-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid rgba(74, 63, 53, 0.25);
+}
+
+.room-box-private {
+  background: #e9dfce;
+}
+
+.room-box-common {
+  background: #efe6d3;
+}
+
+.room-label {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+
+.avatar {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.75rem;
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease, top 0.3s ease;
+  z-index: 1;
+}
+
+.avatar::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.avatar.status-online::after { background: var(--color-online); }
+.avatar.status-offline::after { background: var(--color-offline); }
+.avatar.status-busy::after { background: var(--color-busy); }
+.avatar.status-sleeping::after { background: var(--color-sleeping); }
+
+.room-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.room-switcher button {
+  background: #fff;
+  color: var(--color-text);
+  border: 1px solid var(--color-primary);
+}
+
+.room-switcher button:disabled {
+  opacity: 0.6;
+}
+
+.knock-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: #fff3e0;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.knock-banner .knock-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.knock-banner .knock-actions button {
+  padding: var(--space-1) var(--space-2);
+}
+
+.knock-status {
+  font-size: 0.875rem;
+  color: var(--color-primary-dark);
+  background: #fff3e0;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+
+/* --- 留言板 / 輪值 --- */
+.duty-card {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+#duty-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+#assignee-field {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.message-item {
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.message-item .meta {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* --- 寵物 --- */
+.pet-card {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.pet-stat-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: #eee;
+  overflow: hidden;
+  margin: var(--space-1) 0 var(--space-3);
+}
+
+.pet-stat-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+/* --- 底部 Tab Bar --- */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #eee;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  color: var(--color-muted);
+  border-radius: 0;
+  padding: var(--space-3) 0;
+}
+
+.tab-btn.is-active {
+  color: var(--color-primary-dark);
+  font-weight: bold;
+}

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>小小宿舍</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <span id="current-user-name">--</span>
+      <p id="dorm-name" class="dorm-name">--</p>
+    </div>
+    <select id="status-select">
+      <option value="online">在線</option>
+      <option value="busy">忙碌</option>
+      <option value="sleeping">睡覺中</option>
+    </select>
+    <button id="logout-btn">登出</button>
+  </header>
+
+  <main class="app-main">
+    <section id="view-map" class="app-view">
+      <div id="knock-banner-list">
+        <!-- views/map.js: 有人敲門時在這裡顯示同意/拒絕 -->
+      </div>
+      <p id="my-knock-status" class="knock-status" hidden></p>
+      <div id="room-map" class="room-map">
+        <!-- views/map.js 依 store 'members' 資料渲染 -->
+      </div>
+      <div id="room-actions">
+        <!-- views/map.js：客廳／我的房間／敲每個人的門 -->
+      </div>
+    </section>
+
+    <section id="view-duties" class="app-view" hidden>
+      <div id="duty-list">
+        <!-- TODO(views/duties.js): 今天/本週輪到誰 + 任務打勾 -->
+      </div>
+      <form id="duty-form" class="duty-card">
+        <input id="duty-task-input" type="text" placeholder="任務內容，例如：倒垃圾" autocomplete="off" required />
+        <label id="assignee-field" class="field-label">
+          指派給
+          <select id="duty-assignee-select"></select>
+        </label>
+        <button id="auto-assign-btn" type="button" hidden>自動分配給做最少的人</button>
+        <button type="submit">新增今天的任務</button>
+      </form>
+      <div id="message-board">
+        <div id="message-list" class="message-list">
+          <!-- TODO(views/messages.js): 留言列表 -->
+        </div>
+        <form id="message-form">
+          <input id="message-input" type="text" placeholder="留言給室友..." autocomplete="off" />
+          <button type="submit">送出</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="view-pet" class="app-view" hidden>
+      <div id="pet-card" class="pet-card">
+        <!-- TODO(views/pet.js): 寵物飢餓值/心情值 + 餵食/互動按鈕 -->
+      </div>
+    </section>
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn is-active" data-view="view-map">地圖</button>
+    <button class="tab-btn" data-view="view-duties">輪值/留言</button>
+    <button class="tab-btn" data-view="view-pet">寵物</button>
+  </nav>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

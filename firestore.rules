@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// v2 規則：多寢室(多租戶)架構。個人身分 = Firebase Auth (email/password) 的 uid，
+// 不再需要 v1 那套「先比對 PIN 再綁定匿名 uid」的邏輯，簡單很多。
+// 寢室密碼一樣是客戶端直接比對(跟 v1 PIN 同等級的簡化)，信任小圈子場景，之後如需加強可換 Cloud Functions。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isDormMember(dormId) {
+      return isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/dorms/$(dormId)).data.memberUids;
+    }
+
+    match /accounts/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /dorms/{dormId} {
+      // 要能用寢室代碼查詢加入，所以已登入者都能讀（密碼欄位本來就是客戶端比對的簡化設計）
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+
+      // 兩種允許的更新：(a) 寢室主人可以改任何欄位 (b) 已註冊(非訪客)的人可以把「自己」加進 memberUids，
+      // 但不能動 ownerUid / dormCode / capacity，且不能超過人數上限、不能重複加入
+      allow update: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid ||
+        (
+          request.auth.token.firebase.sign_in_provider != "anonymous" &&
+          request.auth.uid in request.resource.data.memberUids &&
+          !(request.auth.uid in resource.data.memberUids) &&
+          request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1 &&
+          resource.data.memberUids.size() < resource.data.capacity &&
+          request.resource.data.ownerUid == resource.data.ownerUid &&
+          request.resource.data.dormCode == resource.data.dormCode &&
+          request.resource.data.capacity == resource.data.capacity
+        )
+      );
+
+      match /members/{uid} {
+        allow read, write: if isDormMember(dormId);
+      }
+
+      match /rooms/{roomId} {
+        allow read: if isDormMember(dormId);
+        allow create: if isDormMember(dormId) &&
+          (request.resource.data.ownerUid == request.auth.uid || request.resource.data.type == "common");
+        allow update: if isDormMember(dormId) && resource.data.ownerUid == request.auth.uid;
+
+        match /knocks/{requesterUid} {
+          allow read: if isDormMember(dormId);
+          // 房主可以改任何一筆的狀態(同意/拒絕)；敲門者只能把自己那筆設回 pending(=重新敲門)
+          allow create, update: if isDormMember(dormId) && (
+            get(/databases/$(database)/documents/dorms/$(dormId)/rooms/$(roomId)).data.ownerUid == request.auth.uid ||
+            (requesterUid == request.auth.uid && request.resource.data.status == "pending")
+          );
+          // 敲門者自己收尾清掉那筆記錄
+          allow delete: if isDormMember(dormId) && requesterUid == request.auth.uid;
+        }
+      }
+
+      match /duties/{dutyId} {
+        allow read, write: if isDormMember(dormId);
+      }
+
+      match /messages/{messageId} {
+        allow read: if isDormMember(dormId);
+        allow create: if isDormMember(dormId) && request.resource.data.authorUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /pet/{petId} {
+        allow read, write: if isDormMember(dormId);
+      }
+    }
+  }
+}

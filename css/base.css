@@ -1,0 +1,67 @@
+:root {
+  --color-bg: #fdf6ec;
+  --color-primary: #f6a76a;
+  --color-primary-dark: #d97f3d;
+  --color-text: #4a3f35;
+  --color-muted: #9c8f82;
+  --color-danger: #d9534f;
+  --color-online: #6bbf6b;
+  --color-offline: #b0aca6;
+  --color-busy: #e0a13a;
+  --color-sleeping: #7d8fc4;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+
+  font-size: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 保險規則：任何元素只要有 hidden 屬性就一定要真的消失，
+   不然只要那個元素同時有 display:flex/block 之類的 class 或 id 樣式（優先權比 [hidden] 高），
+   hidden 屬性就會被蓋掉，畫面上兩個該切換的區塊會同時顯示（這個坑已經踩過兩次了）。*/
+[hidden] {
+  display: none !important;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+button:active {
+  background: var(--color-primary-dark);
+}
+
+input {
+  font-family: inherit;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+}
+
+.error-text {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}

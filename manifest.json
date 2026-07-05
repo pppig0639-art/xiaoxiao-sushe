@@ -1,0 +1,23 @@
+{
+  "name": "小小宿舍",
+  "short_name": "小小宿舍",
+  "description": "多人共用的虛擬宿舍：即時狀態同步、輪值提醒、留言板、共養寵物",
+  "start_url": "app.html",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#fdf6ec",
+  "theme_color": "#f6a76a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

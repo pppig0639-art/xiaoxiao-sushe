@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>小小宿舍 - 選擇寢室</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/login.css" />
+<link rel="stylesheet" href="css/dorm-select.css" />
+</head>
+<body>
+  <main class="login-screen">
+    <h1 class="login-title">嗨，<span id="greet-name">--</span></h1>
+    <p>先加入一個寢室，或建立一個新的</p>
+
+    <section id="join-section" class="dorm-card">
+      <h2>加入寢室</h2>
+      <form id="join-form">
+        <input id="join-code-input" type="text" inputmode="numeric" placeholder="寢室代碼(6 碼)" maxlength="6" required />
+        <input id="join-password-input" type="password" placeholder="寢室密碼" required />
+        <button type="submit">加入</button>
+      </form>
+      <p id="guest-join-blocked" class="error-text" hidden>訪客帳號不能加入別人的寢室，請先登出並註冊正式帳號</p>
+    </section>
+
+    <section class="dorm-card">
+      <h2>建立寢室</h2>
+      <form id="create-form">
+        <div class="mode-switch">
+          <button type="button" id="mode-shared-btn" class="is-active">家庭/宿舍模式</button>
+          <button type="button" id="mode-personal-btn">個人模式</button>
+        </div>
+        <input id="create-name-input" type="text" placeholder="寢室名稱，例如：我們家" required />
+        <label id="capacity-field" class="field-label">
+          人數上限
+          <select id="create-capacity-select">
+            <option value="2">2 人</option>
+            <option value="3">3 人</option>
+            <option value="4" selected>4 人</option>
+            <option value="5">5 人</option>
+            <option value="6">6 人</option>
+          </select>
+        </label>
+        <input id="create-password-input" type="password" placeholder="設一個寢室密碼(室友加入要用)" required />
+        <button type="submit">建立</button>
+      </form>
+    </section>
+
+    <p id="dorm-error" class="error-text" hidden></p>
+    <button id="logout-btn" type="button" class="link-btn">登出</button>
+  </main>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/dorm-select.js"></script>
+</body>
+</html>

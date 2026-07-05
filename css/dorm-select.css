@@ -1,0 +1,56 @@
+.dorm-card {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.dorm-card h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+}
+
+.dorm-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dorm-card input,
+.dorm-card button,
+.dorm-card select {
+  width: 100%;
+}
+
+.field-label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.link-btn {
+  background: transparent;
+  color: var(--color-muted);
+  text-decoration: underline;
+}
+
+.mode-switch {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.mode-switch button {
+  flex: 1;
+  background: #fff;
+  color: var(--color-text);
+  border: 2px solid var(--color-primary);
+  font-size: 0.8rem;
+}
+
+.mode-switch button.is-active {
+  background: var(--color-primary);
+  color: #fff;
+}

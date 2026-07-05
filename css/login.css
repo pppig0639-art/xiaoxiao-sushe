@@ -1,0 +1,108 @@
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.login-title {
+  font-size: 1.75rem;
+  margin: 0;
+}
+
+.login-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-step[hidden] {
+  display: none;
+}
+
+.login-mode-switch {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.login-mode-switch button {
+  background: #fff;
+  color: var(--color-text);
+  border: 2px solid var(--color-primary);
+}
+
+.login-mode-switch button.is-active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+#auth-form input,
+#auth-form button {
+  width: 100%;
+}
+
+.login-divider {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.google-btn {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  color: var(--color-text);
+  border: 2px solid var(--color-muted);
+}
+
+.guest-btn {
+  width: 100%;
+  max-width: 320px;
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px dashed var(--color-muted);
+}
+
+.guest-hint {
+  max-width: 320px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  text-align: center;
+  margin: 0;
+}
+
+.name-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.name-list button {
+  padding: var(--space-3);
+  background: #fff;
+  color: var(--color-text);
+  border: 2px solid var(--color-primary);
+}
+
+.name-list button.is-selected {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+#pin-input {
+  width: 100%;
+  text-align: center;
+  font-size: 1.25rem;
+  letter-spacing: 0.5em;
+}
+
+#pin-submit {
+  width: 100%;
+}
