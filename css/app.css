@@ -133,6 +133,78 @@
   margin: 0 0 var(--space-2);
 }
 
+.ambience-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.ambience-bar select {
+  flex: 1;
+}
+
+.decoration-editor {
+  margin-top: var(--space-3);
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.decoration-editor-title {
+  margin: 0 0 var(--space-2);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.decoration-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: var(--space-2);
+}
+
+.decoration-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-muted);
+  background: #fff;
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
+.decoration-option.is-selected {
+  border-color: var(--color-primary);
+  background: #fff3e0;
+}
+
+.decoration-option .decoration-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.room-decorations {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.room-decoration-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
 /* --- 留言板 / 輪值 --- */
 .duty-card {
   background: #fff;

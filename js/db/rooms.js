@@ -9,6 +9,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   where,
   serverTimestamp,
@@ -17,7 +18,6 @@ import * as store from "../store.js";
 
 let unsubscribeRooms = null;
 let unsubscribeIncomingKnocks = null;
-let unsubscribeMyKnock = null;
 
 export function listenRooms(dormId) {
   if (unsubscribeRooms) return;
@@ -38,7 +38,12 @@ export function createOwnRoom(dormId, uid) {
   return setDoc(doc(db, "dorms", dormId, "rooms", uid), {
     type: "private",
     ownerUid: uid,
+    decorations: [],
   });
+}
+
+export function updateDecorations(dormId, uid, decorations) {
+  return updateDoc(doc(db, "dorms", dormId, "rooms", uid), { decorations });
 }
 
 export function createCommonRoom(dormId) {
@@ -49,25 +54,44 @@ export function createCommonRoom(dormId) {
 }
 
 // --- 敲門 ---
+// 敲門結果同時鏡射寫一份到「敲門者自己的 members 文件」上（outgoingKnock 欄位），
+// 這樣敲門者只要訂閱本來就在聽的 members 資料就能看到結果，不需要額外用 collection group
+// 查詢「我敲過的所有門」—— 省掉一個要另外設定 Firestore 索引的麻煩。
 
 export function requestKnock(dormId, roomId, requesterUid, requesterName) {
-  return setDoc(doc(db, "dorms", dormId, "rooms", roomId, "knocks", requesterUid), {
-    requesterUid,
-    requesterName,
-    status: "pending",
-    createdAt: serverTimestamp(),
-  });
+  return Promise.all([
+    setDoc(doc(db, "dorms", dormId, "rooms", roomId, "knocks", requesterUid), {
+      requesterUid,
+      requesterName,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    }),
+    updateDoc(doc(db, "dorms", dormId, "members", requesterUid), {
+      outgoingKnock: { roomId, status: "pending" },
+    }),
+  ]);
 }
 
 export function respondToKnock(dormId, roomId, requesterUid, approve) {
-  return updateDoc(doc(db, "dorms", dormId, "rooms", roomId, "knocks", requesterUid), {
-    status: approve ? "approved" : "denied",
-    respondedAt: serverTimestamp(),
-  });
+  const status = approve ? "approved" : "denied";
+  return Promise.all([
+    updateDoc(doc(db, "dorms", dormId, "rooms", roomId, "knocks", requesterUid), {
+      status,
+      respondedAt: serverTimestamp(),
+    }),
+    updateDoc(doc(db, "dorms", dormId, "members", requesterUid), {
+      outgoingKnock: { roomId, status },
+    }),
+  ]);
 }
 
 export function deleteKnock(dormId, roomId, requesterUid) {
-  return deleteDoc(doc(db, "dorms", dormId, "rooms", roomId, "knocks", requesterUid));
+  return Promise.all([
+    deleteDoc(doc(db, "dorms", dormId, "rooms", roomId, "knocks", requesterUid)),
+    updateDoc(doc(db, "dorms", dormId, "members", requesterUid), {
+      outgoingKnock: deleteField(),
+    }),
+  ]);
 }
 
 // 我自己房間收到的敲門請求（只挑還沒處理的）
@@ -86,23 +110,5 @@ export function stopListeningIncomingKnocks() {
   if (unsubscribeIncomingKnocks) {
     unsubscribeIncomingKnocks();
     unsubscribeIncomingKnocks = null;
-  }
-}
-
-// 我敲了別人的門之後，追蹤那一筆的狀態變化
-export function listenMyKnockStatus(dormId, targetRoomId, myUid) {
-  if (unsubscribeMyKnock) unsubscribeMyKnock();
-  unsubscribeMyKnock = onSnapshot(
-    doc(db, "dorms", dormId, "rooms", targetRoomId, "knocks", myUid),
-    (snap) => {
-      store.set("myKnockStatus", snap.exists() ? { roomId: targetRoomId, ...snap.data() } : null);
-    }
-  );
-}
-
-export function stopListeningMyKnock() {
-  if (unsubscribeMyKnock) {
-    unsubscribeMyKnock();
-    unsubscribeMyKnock = null;
   }
 }

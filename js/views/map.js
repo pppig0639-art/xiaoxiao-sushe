@@ -3,12 +3,8 @@
 
 import * as store from "../store.js";
 import { updateCurrentRoom } from "../db/members.js";
-import {
-  requestKnock,
-  respondToKnock,
-  deleteKnock,
-  listenMyKnockStatus,
-} from "../db/rooms.js";
+import { requestKnock, respondToKnock, deleteKnock } from "../db/rooms.js";
+import { DECORATION_ITEMS } from "./decorations.js";
 
 let mapEl = null;
 let roomActionsEl = null;
@@ -28,18 +24,30 @@ export function initMapView(_dormId, uid) {
   store.subscribe("members", () => {
     renderRooms();
     renderRoomActions();
-  });
-  store.subscribe("incomingKnocks", renderIncomingKnocks);
-  store.subscribe("myKnockStatus", () => {
     renderMyKnockStatus();
-    renderRoomActions();
   });
+  store.subscribe("rooms", renderRooms);
+  store.subscribe("incomingKnocks", renderIncomingKnocks);
 }
 
 function memberName(uid) {
   const members = store.get("members") || [];
   const m = members.find((x) => x.id === uid);
   return m ? m.displayName : "對方";
+}
+
+// 敲門結果直接鏡射在自己的 members 文件上（outgoingKnock 欄位），
+// 不用另外訂閱 collection group query，省掉要另外設定 Firestore 索引的麻煩。
+function myOutgoingKnock() {
+  const members = store.get("members") || [];
+  const me = members.find((m) => m.id === currentUid);
+  return (me && me.outgoingKnock) || null;
+}
+
+function roomDecorations(roomId) {
+  const rooms = store.get("rooms") || [];
+  const room = rooms.find((r) => r.id === roomId);
+  return (room && room.decorations) || [];
 }
 
 function buildRoomRects(members) {
@@ -71,6 +79,25 @@ function renderRooms() {
     label.className = "room-label";
     label.textContent = roomId === "common" ? "客廳" : `${memberName(roomId)}的房間`;
     box.appendChild(label);
+
+    if (roomId !== "common") {
+      const decorations = roomDecorations(roomId);
+      if (decorations.length > 0) {
+        const chipRow = document.createElement("div");
+        chipRow.className = "room-decorations";
+        decorations.forEach((decoId) => {
+          const item = DECORATION_ITEMS.find((d) => d.id === decoId);
+          if (!item) return;
+          const chip = document.createElement("span");
+          chip.className = "room-decoration-chip";
+          chip.style.background = item.color;
+          chip.title = item.label;
+          chipRow.appendChild(chip);
+        });
+        box.appendChild(chipRow);
+      }
+    }
+
     mapEl.appendChild(box);
   });
 
@@ -101,7 +128,7 @@ function renderRooms() {
 
 function renderRoomActions() {
   const members = store.get("members") || [];
-  const myKnock = store.get("myKnockStatus");
+  const myKnock = myOutgoingKnock();
   roomActionsEl.innerHTML = "";
   roomActionsEl.className = "room-switcher";
 
@@ -124,14 +151,13 @@ function renderRoomActions() {
       btn.disabled = isPendingThisRoom;
       btn.addEventListener("click", () => {
         requestKnock(dormId, member.id, currentUid, memberName(currentUid));
-        listenMyKnockStatus(dormId, member.id, currentUid);
       });
       roomActionsEl.appendChild(btn);
     });
 }
 
 function renderMyKnockStatus() {
-  const status = store.get("myKnockStatus");
+  const status = myOutgoingKnock();
   if (!status) {
     myKnockStatusEl.hidden = true;
     return;

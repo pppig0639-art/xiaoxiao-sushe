@@ -18,6 +18,8 @@ import { initDutiesView } from "./views/duties.js";
 import { initMessagesView } from "./views/messages.js";
 import { initPetView } from "./views/pet.js";
 import { initStatusControl, markOffline } from "./views/status.js";
+import { initAmbienceControl } from "./views/ambience.js";
+import { initDecorationsView } from "./views/decorations.js";
 
 const currentUserNameEl = document.getElementById("current-user-name");
 const dormNameEl = document.getElementById("dorm-name");
@@ -67,6 +69,8 @@ async function bootstrap(user) {
   initMessagesView(dormId, user.uid);
   initPetView(dormId, user.uid);
   initStatusControl(dormId, user.uid);
+  initAmbienceControl();
+  initDecorationsView(dormId, user.uid);
 }
 
 onAuthStateChanged(auth, (user) => {

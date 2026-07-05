@@ -34,6 +34,24 @@
       <div id="room-actions">
         <!-- views/map.js：客廳／我的房間／敲每個人的門 -->
       </div>
+
+      <div class="ambience-bar">
+        <label for="ambience-select">背景音效</label>
+        <select id="ambience-select">
+          <option value="off">關閉</option>
+          <option value="white">白噪音</option>
+          <option value="rain">雨聲</option>
+          <option value="typing">打字音效</option>
+        </select>
+      </div>
+
+      <div id="decoration-editor" class="decoration-editor" hidden>
+        <p class="decoration-editor-title">裝飾我的房間</p>
+        <div id="decoration-options" class="decoration-options">
+          <!-- views/decorations.js：可勾選的裝飾項目 -->
+        </div>
+      </div>
+      <button id="edit-decorations-btn" type="button" class="link-btn">裝飾我的房間</button>
     </section>
 
     <section id="view-duties" class="app-view" hidden>
