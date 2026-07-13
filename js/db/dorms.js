@@ -28,6 +28,7 @@ export async function createDorm({ name, capacity, dormPassword, ownerUid, mode 
     ownerUid,
     mode, // "shared" | "personal"
     memberUids: [ownerUid],
+    visitorUids: [],
     createdAt: serverTimestamp(),
   });
   return { id: ref.id, dormCode };
@@ -48,4 +49,9 @@ export async function getDorm(dormId) {
 
 export function joinDorm(dormId, uid) {
   return updateDoc(doc(db, "dorms", dormId), { memberUids: arrayUnion(uid) });
+}
+
+// 訪客加入：不占人數上限，只能待客廳，訪客帳號(匿名登入)也可以用這個
+export function joinDormAsVisitor(dormId, uid) {
+  return updateDoc(doc(db, "dorms", dormId), { visitorUids: arrayUnion(uid) });
 }

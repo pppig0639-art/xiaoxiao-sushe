@@ -1,17 +1,18 @@
-// dorm-select.html 的畫面邏輯：加入既有寢室，或建立新寢室。
+// dorm-select.html 的畫面邏輯：加入既有寢室(正式室友或訪客)，或建立新寢室。
 
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import { getAccount, setCurrentDorm } from "./db/accounts.js";
-import { findDormByCode, createDorm, joinDorm } from "./db/dorms.js";
+import { findDormByCode, createDorm, joinDorm, joinDormAsVisitor } from "./db/dorms.js";
 import { createOwnRoom, createCommonRoom } from "./db/rooms.js";
-import { createMemberDoc } from "./db/members.js";
+import { createMemberDoc, createVisitorMemberDoc } from "./db/members.js";
 
 const greetNameEl = document.getElementById("greet-name");
 const joinForm = document.getElementById("join-form");
-const guestJoinBlockedEl = document.getElementById("guest-join-blocked");
 const joinCodeInput = document.getElementById("join-code-input");
 const joinPasswordInput = document.getElementById("join-password-input");
+const joinAsVisitorInput = document.getElementById("join-as-visitor-input");
+const guestVisitorOnlyHintEl = document.getElementById("guest-visitor-only-hint");
 const createForm = document.getElementById("create-form");
 const createNameInput = document.getElementById("create-name-input");
 const capacityField = document.getElementById("capacity-field");
@@ -25,6 +26,7 @@ const modePersonalBtn = document.getElementById("mode-personal-btn");
 let currentUid = null;
 let currentDisplayName = "";
 let createMode = "shared"; // "shared" | "personal"
+let isGuestAccount = false;
 
 function setCreateMode(mode) {
   createMode = mode;
@@ -48,6 +50,7 @@ async function handleJoin(e) {
   showError("");
   const code = joinCodeInput.value.trim();
   const password = joinPasswordInput.value;
+  const asVisitor = isGuestAccount || joinAsVisitorInput.checked;
 
   try {
     const dorm = await findDormByCode(code);
@@ -59,15 +62,26 @@ async function handleJoin(e) {
       showError("密碼不對喔");
       return;
     }
-    if (!dorm.memberUids.includes(currentUid) && dorm.memberUids.length >= dorm.capacity) {
-      showError("這個寢室已經滿了");
-      return;
-    }
 
-    if (!dorm.memberUids.includes(currentUid)) {
-      await joinDorm(dorm.id, currentUid);
-      await createMemberDoc(dorm.id, currentUid, currentDisplayName);
-      await createOwnRoom(dorm.id, currentUid);
+    const visitorUids = dorm.visitorUids || [];
+    const alreadyMember = dorm.memberUids.includes(currentUid);
+    const alreadyVisitor = visitorUids.includes(currentUid);
+
+    if (asVisitor) {
+      if (!alreadyVisitor) {
+        await joinDormAsVisitor(dorm.id, currentUid);
+        await createVisitorMemberDoc(dorm.id, currentUid, currentDisplayName);
+      }
+    } else {
+      if (!alreadyMember && dorm.memberUids.length >= dorm.capacity) {
+        showError("這個寢室已經滿了");
+        return;
+      }
+      if (!alreadyMember) {
+        await joinDorm(dorm.id, currentUid);
+        await createMemberDoc(dorm.id, currentUid, currentDisplayName);
+        await createOwnRoom(dorm.id, currentUid);
+      }
     }
     await afterJoinOrCreate(dorm.id);
   } catch (err) {
@@ -131,8 +145,11 @@ onAuthStateChanged(auth, async (user) => {
   currentDisplayName = account.displayName;
   greetNameEl.textContent = account.displayName;
 
-  if (user.isAnonymous) {
-    joinForm.hidden = true;
-    guestJoinBlockedEl.hidden = false;
+  // 訪客帳號(匿名登入)只能用「訪客身分」加入別人的寢室，不能成為正式室友
+  isGuestAccount = user.isAnonymous;
+  if (isGuestAccount) {
+    joinAsVisitorInput.checked = true;
+    joinAsVisitorInput.disabled = true;
+    guestVisitorOnlyHintEl.hidden = false;
   }
 });

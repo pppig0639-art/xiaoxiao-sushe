@@ -136,6 +136,11 @@ body {
   z-index: 1;
 }
 
+.avatar-visitor {
+  background: var(--color-muted);
+  border: 2px dashed #fff;
+}
+
 .avatar::after {
   content: "";
   position: absolute;

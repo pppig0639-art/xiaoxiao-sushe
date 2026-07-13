@@ -45,10 +45,15 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// 訪客不用做家事，選單/自動分配都排除
+function realMembers(members) {
+  return members.filter((m) => m.role !== "visitor");
+}
+
 function renderAssigneeOptions(members) {
   const previousValue = assigneeSelectEl.value;
   assigneeSelectEl.innerHTML = "";
-  members.forEach((member) => {
+  realMembers(members).forEach((member) => {
     const option = document.createElement("option");
     option.value = member.id;
     option.textContent = member.displayName;
@@ -58,8 +63,8 @@ function renderAssigneeOptions(members) {
 }
 
 function currentUserId() {
-  const members = store.get("members") || [];
-  // 個人模式下寢室永遠只有一個成員
+  const members = realMembers(store.get("members") || []);
+  // 個人模式下寢室永遠只有一個正式成員(訪客不算)
   return members[0] ? members[0].id : null;
 }
 
@@ -72,8 +77,7 @@ function handleCreateDuty(e) {
   if (mode === "personal") {
     assignedUid = currentUserId();
   } else if (pendingAutoAssign) {
-    const members = store.get("members") || [];
-    const picked = pickFairestAssignee(members);
+    const picked = pickFairestAssignee(realMembers(store.get("members") || []));
     assignedUid = picked ? picked.id : assigneeSelectEl.value;
   } else {
     assignedUid = assigneeSelectEl.value;

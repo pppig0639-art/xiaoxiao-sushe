@@ -19,9 +19,13 @@
       <form id="join-form">
         <input id="join-code-input" type="text" inputmode="numeric" placeholder="寢室代碼(6 碼)" maxlength="6" required />
         <input id="join-password-input" type="password" placeholder="寢室密碼" required />
+        <label class="checkbox-field">
+          <input id="join-as-visitor-input" type="checkbox" />
+          以訪客身分加入(只能待客廳看看，不占房間名額、不用做家事)
+        </label>
+        <p id="guest-visitor-only-hint" class="hint-text" hidden>訪客帳號只能用「訪客身分」加入，不能成為正式室友</p>
         <button type="submit">加入</button>
       </form>
-      <p id="guest-join-blocked" class="error-text" hidden>訪客帳號不能加入別人的寢室，請先登出並註冊正式帳號</p>
     </section>
 
     <section class="dorm-card">

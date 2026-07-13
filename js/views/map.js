@@ -56,8 +56,15 @@ function roomDecorations(roomId) {
   return (room && room.decorations) || [];
 }
 
+function myRole() {
+  const members = store.get("members") || [];
+  const me = members.find((m) => m.id === currentUid);
+  return me ? me.role || "member" : "member";
+}
+
+// 訪客沒有自己的房間，只有正式室友(role !== "visitor")才會生成私人房間格子
 function buildRoomRects(members) {
-  const ids = members.map((m) => m.id).sort();
+  const ids = members.filter((m) => m.role !== "visitor").map((m) => m.id).sort();
   const rects = {};
   const n = Math.max(ids.length, 1);
 
@@ -121,12 +128,13 @@ function renderRooms() {
     const startOffset = -((roomMembers.length - 1) * spacing) / 2;
 
     roomMembers.forEach((member, index) => {
+      const isVisitorMember = member.role === "visitor";
       const avatar = document.createElement("div");
-      avatar.className = `avatar status-${member.status || "offline"}`;
+      avatar.className = `avatar status-${member.status || "offline"}${isVisitorMember ? " avatar-visitor" : ""}`;
       avatar.style.left = `${centerLeft + startOffset + index * spacing}%`;
       avatar.style.top = `${centerTop}%`;
       avatar.textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
-      avatar.title = `${member.displayName || "?"} - ${member.mood || ""}`;
+      avatar.title = `${member.displayName || "?"}${isVisitorMember ? "（訪客）" : ""} ${member.mood || ""}`;
       mapEl.appendChild(avatar);
     });
   });
@@ -135,6 +143,7 @@ function renderRooms() {
 function renderRoomActions() {
   const members = store.get("members") || [];
   const myKnock = myOutgoingKnock();
+  const isVisitor = myRole() === "visitor";
   roomActionsEl.innerHTML = "";
   roomActionsEl.className = "map-hud-bottom room-switcher";
 
@@ -143,13 +152,16 @@ function renderRoomActions() {
   commonBtn.addEventListener("click", () => updateCurrentRoom(dormId, currentUid, "common"));
   roomActionsEl.appendChild(commonBtn);
 
+  // 訪客沒有自己的房間、也不能敲別人的門（只能待在客廳看看）
+  if (isVisitor) return;
+
   const ownRoomBtn = document.createElement("button");
   ownRoomBtn.textContent = "我的房間";
   ownRoomBtn.addEventListener("click", () => updateCurrentRoom(dormId, currentUid, currentUid));
   roomActionsEl.appendChild(ownRoomBtn);
 
   members
-    .filter((m) => m.id !== currentUid)
+    .filter((m) => m.id !== currentUid && m.role !== "visitor")
     .forEach((member) => {
       const btn = document.createElement("button");
       const isPendingThisRoom = myKnock && myKnock.roomId === member.id && myKnock.status === "pending";

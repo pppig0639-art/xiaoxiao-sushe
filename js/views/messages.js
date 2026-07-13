@@ -31,7 +31,8 @@ function handleSubmit(e) {
 function authorName(authorUid) {
   const members = store.get("members") || [];
   const author = members.find((m) => m.id === authorUid);
-  return author ? author.displayName : "室友";
+  if (!author) return "室友";
+  return author.role === "visitor" ? `${author.displayName}（訪客）` : author.displayName;
 }
 
 function formatTime(timestamp) {

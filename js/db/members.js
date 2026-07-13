@@ -32,6 +32,21 @@ export function stopListeningMembers() {
 export function createMemberDoc(dormId, uid, displayName) {
   return setDoc(doc(db, "dorms", dormId, "members", uid), {
     displayName,
+    role: "member",
+    currentRoomId: "common",
+    status: "offline",
+    activity: "idle",
+    mood: "",
+    lastActiveAt: new Date(),
+    taskCompletedCount: 0,
+  });
+}
+
+// 訪客沒有自己的房間、不用做家事，永遠待在客廳
+export function createVisitorMemberDoc(dormId, uid, displayName) {
+  return setDoc(doc(db, "dorms", dormId, "members", uid), {
+    displayName,
+    role: "visitor",
     currentRoomId: "common",
     status: "offline",
     activity: "idle",

@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { getAccount } from "./db/accounts.js";
 import { getDorm } from "./db/dorms.js";
 
-import { listenMembers } from "./db/members.js";
+import { listenMembers, getMember } from "./db/members.js";
 import { listenRooms, listenIncomingKnocks } from "./db/rooms.js";
 import { listenDuties } from "./db/duties.js";
 import { listenMessages } from "./db/messages.js";
@@ -52,7 +52,9 @@ async function bootstrap(user) {
   const dormId = account.currentDormId;
   const dorm = await getDorm(dormId);
 
-  currentUserNameEl.textContent = account.displayName;
+  const member = await getMember(dormId, user.uid);
+  const isVisitor = member && member.role === "visitor";
+  currentUserNameEl.textContent = account.displayName + (isVisitor ? "（訪客）" : "");
   dormNameEl.textContent = dorm ? `${dorm.name}（代碼 ${dorm.dormCode}）` : "";
 
   await ensurePetExists(dormId);

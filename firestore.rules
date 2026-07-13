@@ -11,9 +11,22 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function dormData(dormId) {
+      return get(/databases/$(database)/documents/dorms/$(dormId)).data;
+    }
+
+    // 舊寢室文件可能沒有 visitorUids 欄位(這個功能上線前就建立的)，統一當作空陣列處理
+    function existingVisitorUids(data) {
+      return ('visitorUids' in data) ? data.visitorUids : [];
+    }
+
+    // 正式室友(memberUids，占用人數上限)跟訪客(visitorUids，不占名額、只能待客廳)
+    // 都算是「這個寢室的人」，讀取/互動權限一視同仁，差別在 dorms 更新規則跟前端畫面上。
     function isDormMember(dormId) {
-      return isSignedIn() &&
-        request.auth.uid in get(/databases/$(database)/documents/dorms/$(dormId)).data.memberUids;
+      return isSignedIn() && (
+        request.auth.uid in dormData(dormId).memberUids ||
+        request.auth.uid in existingVisitorUids(dormData(dormId))
+      );
     }
 
     match /accounts/{uid} {
@@ -26,8 +39,11 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
 
-      // 兩種允許的更新：(a) 寢室主人可以改任何欄位 (b) 已註冊(非訪客)的人可以把「自己」加進 memberUids，
-      // 但不能動 ownerUid / dormCode / capacity，且不能超過人數上限、不能重複加入
+      // 三種允許的更新：
+      // (a) 寢室主人可以改任何欄位
+      // (b) 已註冊(非訪客帳號)的人可以把「自己」加進 memberUids —— 正式室友，占人數上限
+      // (c) 任何登入的人(含訪客帳號)可以把「自己」加進 visitorUids —— 訪客，不占名額、不能動人數上限相關欄位
+      // 兩種情況都不能動 ownerUid / dormCode / capacity，且不能重複加入
       allow update: if isSignedIn() && (
         resource.data.ownerUid == request.auth.uid ||
         (
@@ -36,6 +52,16 @@ service cloud.firestore {
           !(request.auth.uid in resource.data.memberUids) &&
           request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1 &&
           resource.data.memberUids.size() < resource.data.capacity &&
+          existingVisitorUids(request.resource.data) == existingVisitorUids(resource.data) &&
+          request.resource.data.ownerUid == resource.data.ownerUid &&
+          request.resource.data.dormCode == resource.data.dormCode &&
+          request.resource.data.capacity == resource.data.capacity
+        ) ||
+        (
+          request.auth.uid in request.resource.data.visitorUids &&
+          !(request.auth.uid in existingVisitorUids(resource.data)) &&
+          request.resource.data.visitorUids.size() == existingVisitorUids(resource.data).size() + 1 &&
+          request.resource.data.memberUids == resource.data.memberUids &&
           request.resource.data.ownerUid == resource.data.ownerUid &&
           request.resource.data.dormCode == resource.data.dormCode &&
           request.resource.data.capacity == resource.data.capacity
