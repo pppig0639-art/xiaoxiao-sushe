@@ -45,6 +45,22 @@ function roomTint(uid, privateRoomIds) {
   return ROOM_TINTS[index % ROOM_TINTS.length];
 }
 
+// 小人物美術素材(Kenney.nl 免費 CC0 的 Toon Characters)，每個人依照 uid 排序固定分配一種角色造型，
+// 這樣同一個人每次畫面重繪都會是同一個小人物，不會一直變來變去。
+const AVATAR_SPRITES = [
+  "assets/sprites/avatars/person-female.png",
+  "assets/sprites/avatars/person-male.png",
+  "assets/sprites/avatars/adventurer-female.png",
+  "assets/sprites/avatars/adventurer-male.png",
+];
+
+function avatarSprite(uid) {
+  const members = store.get("members") || [];
+  const ids = members.map((m) => m.id).sort();
+  const index = ids.indexOf(uid);
+  return AVATAR_SPRITES[(index === -1 ? 0 : index) % AVATAR_SPRITES.length];
+}
+
 function memberName(uid) {
   const members = store.get("members") || [];
   const m = members.find((x) => x.id === uid);
@@ -196,8 +212,24 @@ function renderRooms() {
       avatar.className = `avatar status-${member.status || "offline"}${isVisitorMember ? " avatar-visitor" : ""}`;
       avatar.style.left = `${centerLeft + startOffset + index * spacing}%`;
       avatar.style.top = `${centerTop}%`;
-      avatar.textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
       avatar.title = `${member.displayName || "?"}${isVisitorMember ? "（訪客）" : ""} ${member.mood || ""}`;
+
+      const shadow = document.createElement("div");
+      shadow.className = "avatar-shadow";
+
+      const sprite = document.createElement("img");
+      sprite.className = "avatar-sprite";
+      sprite.src = avatarSprite(member.id);
+      sprite.alt = "";
+
+      const statusDot = document.createElement("span");
+      statusDot.className = "avatar-status-dot";
+
+      const nameTag = document.createElement("span");
+      nameTag.className = "avatar-name";
+      nameTag.textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
+
+      avatar.append(shadow, sprite, statusDot, nameTag);
       mapEl.appendChild(avatar);
     });
   });

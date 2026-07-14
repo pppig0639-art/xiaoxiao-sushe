@@ -45,6 +45,7 @@ assets/
   icons/                PWA icons（目前是預留路徑，尚未放實際圖檔）
   sprites/
     furniture/          房間家具素材，見下方「美術/音效素材來源」
+    avatars/            小人物角色素材，見下方「美術/音效素材來源」
   sounds/               背景音效檔案，見下方「美術/音效素材來源」
 ```
 
@@ -52,10 +53,10 @@ assets/
 
 - 房間家具：[Kenney.nl](https://kenney.nl) 的免費素材 [Furniture Kit](https://kenney.nl/assets/furniture-kit)，
   CC0 授權（公共領域，不需要標示來源也可以商用）。
+- 小人物角色：[Kenney.nl](https://kenney.nl) 的免費素材 [Toon Characters](https://kenney.nl/assets/toon-characters)，
+  CC0 授權，每個成員依帳號 ID 排序固定分配一種造型(`js/views/map.js` 的 `AVATAR_SPRITES`)。
 - 背景音效(白噪音/雨聲/打字音)：[mixkit.co](https://mixkit.co/free-sound-effects/) 免費音效庫，
   Mixkit 免費授權（個人/商業用途都可以，不需要標示來源，但不能把音檔本身重新包裝販售）。
-小人物目前還是純 CSS 畫的圓形，之後想找同風格的角色素材可以先看 Kenney 有沒有搭配的角色包，
-或去 [itch.io](https://itch.io/game-assets/free) 搜尋 "free character sprite"。
 
 ## 資料模型
 

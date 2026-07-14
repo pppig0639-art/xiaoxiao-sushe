@@ -197,56 +197,66 @@ body {
   z-index: 0;
 }
 
+/* 小人物美術素材來自 Kenney.nl 的免費 CC0「Toon Characters」，每個人固定分配一種造型(見 map.js)。
+   定位點放在角色腳底(translate(-50%, -100%))，感覺像站在地板上，而不是浮在房間正中間。 */
 .avatar {
   position: absolute;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 0.75rem;
-  transform: translate(-50%, -50%);
+  width: 34px;
+  text-align: center;
+  transform: translate(-50%, -100%);
   transition: left 0.3s ease, top 0.3s ease;
   z-index: 3;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
 }
 
-.avatar::before {
-  content: "";
+.avatar-shadow {
   position: absolute;
   left: 50%;
-  bottom: -9px;
-  width: 24px;
-  height: 7px;
+  bottom: 2px;
+  width: 22px;
+  height: 6px;
   background: rgba(43, 38, 32, 0.18);
   border-radius: 50%;
   transform: translateX(-50%);
   z-index: -1;
 }
 
-.avatar-visitor {
-  background: var(--color-muted);
-  border: 2px dashed #fff;
+.avatar-sprite {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 2px 1px rgba(43, 38, 32, 0.25));
 }
 
-.avatar::after {
-  content: "";
+.avatar-visitor .avatar-sprite {
+  filter: grayscale(0.55) drop-shadow(0 2px 1px rgba(43, 38, 32, 0.25));
+}
+
+.avatar-status-dot {
   position: absolute;
-  right: -2px;
-  bottom: -2px;
+  top: 4px;
+  right: 2px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
   border: 2px solid #fff;
 }
 
-.avatar.status-online::after { background: var(--color-online); }
-.avatar.status-offline::after { background: var(--color-offline); }
-.avatar.status-busy::after { background: var(--color-busy); }
-.avatar.status-sleeping::after { background: var(--color-sleeping); }
+.avatar.status-online .avatar-status-dot { background: var(--color-online); }
+.avatar.status-offline .avatar-status-dot { background: var(--color-offline); }
+.avatar.status-busy .avatar-status-dot { background: var(--color-busy); }
+.avatar.status-sleeping .avatar-status-dot { background: var(--color-sleeping); }
+
+.avatar-name {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.6rem;
+  line-height: 1.3;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
 
 .room-switcher {
   display: flex;
