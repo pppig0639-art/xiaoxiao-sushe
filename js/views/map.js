@@ -93,6 +93,19 @@ function renderRooms() {
     label.textContent = roomId === "common" ? "客廳" : `${memberName(roomId)}的房間`;
     box.appendChild(label);
 
+    // 簡單家具(純 CSS 色塊)，讓房間看起來不只是一塊空白色塊
+    if (roomId === "common") {
+      const rug = document.createElement("div");
+      rug.className = "furniture-rug";
+      const sofa = document.createElement("div");
+      sofa.className = "furniture-sofa";
+      box.append(rug, sofa);
+    } else {
+      const bed = document.createElement("div");
+      bed.className = "furniture-bed";
+      box.appendChild(bed);
+    }
+
     if (roomId !== "common") {
       const decorations = roomDecorations(roomId);
       if (decorations.length > 0) {
