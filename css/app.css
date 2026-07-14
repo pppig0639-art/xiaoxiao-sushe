@@ -107,6 +107,19 @@ body {
   overflow-x: auto;
 }
 
+/* 房間格子跟小人物拆成兩層：房間格子每次重繪整批換掉沒關係，
+   但小人物那層絕對不能被整批清空重建，不然 CSS 的移動動畫(transition)沒辦法接上，
+   人物換房間時就會用「用力硬跳」的方式亂跳，而不是滑過去。 */
+.room-boxes-layer,
+.avatar-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.avatar-layer {
+  pointer-events: none;
+}
+
 .room-box {
   position: absolute;
   box-sizing: border-box;

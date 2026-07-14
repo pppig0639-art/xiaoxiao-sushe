@@ -53,8 +53,9 @@ assets/
 
 - 房間家具：[Kenney.nl](https://kenney.nl) 的免費素材 [Furniture Kit](https://kenney.nl/assets/furniture-kit)，
   CC0 授權（公共領域，不需要標示來源也可以商用）。
-- 小人物角色：[Kenney.nl](https://kenney.nl) 的免費素材 [Toon Characters](https://kenney.nl/assets/toon-characters)，
-  CC0 授權，每個成員依帳號 ID 排序固定分配一種造型(`js/views/map.js` 的 `AVATAR_SPRITES`)。
+- 小人物角色：使用者自己用 Gemini 生成的 4 款 Q 版角色圖(`assets/sprites/avatars/avatar-*.png`)，
+  每個人可以在「選擇我的角色」面板自己挑一款(存在 `members/{uid}.avatarChoice`)，
+  選項清單見 `js/views/map.js` 的 `AVATAR_OPTIONS`，允許重複、沒有唯一性限制。
 - 背景音效(白噪音/雨聲/打字音)：[mixkit.co](https://mixkit.co/free-sound-effects/) 免費音效庫，
   Mixkit 免費授權（個人/商業用途都可以，不需要標示來源，但不能把音檔本身重新包裝販售）。
 

@@ -2,29 +2,38 @@
 // 客廳跟自己的房間可以直接進，別人的房間要「敲門」，對方同意才會被自動移進去。
 
 import * as store from "../store.js";
-import { updateCurrentRoom } from "../db/members.js";
+import { updateCurrentRoom, updateAvatarChoice } from "../db/members.js";
 import { requestKnock, respondToKnock, deleteKnock } from "../db/rooms.js";
 import { DECORATION_ITEMS } from "./decorations.js";
 
-let mapEl = null;
+let roomBoxesEl = null;
+let avatarLayerEl = null;
 let roomActionsEl = null;
 let knockBannerListEl = null;
 let myKnockStatusEl = null;
+let avatarOptionsEl = null;
 let currentUid = null;
 let dormId = null;
+
+// uid -> 該人物在畫面上的 DOM 節點，重繪時盡量重複使用同一顆節點(只改 left/top)，
+// 這樣 CSS 的 transition 才能真的「滑過去」，而不是整批砍掉重建變成用跳的。
+const avatarEls = new Map();
 
 export function initMapView(_dormId, uid) {
   dormId = _dormId;
   currentUid = uid;
-  mapEl = document.getElementById("room-map");
+  roomBoxesEl = document.getElementById("room-boxes");
+  avatarLayerEl = document.getElementById("avatar-layer");
   roomActionsEl = document.getElementById("room-actions");
   knockBannerListEl = document.getElementById("knock-banner-list");
   myKnockStatusEl = document.getElementById("my-knock-status");
+  avatarOptionsEl = document.getElementById("avatar-options");
 
   store.subscribe("members", () => {
     renderRooms();
     renderRoomActions();
     renderMyKnockStatus();
+    renderAvatarOptions();
   });
   store.subscribe("rooms", renderRooms);
   store.subscribe("incomingKnocks", renderIncomingKnocks);
@@ -33,6 +42,12 @@ export function initMapView(_dormId, uid) {
   const settingsPanel = document.getElementById("map-settings-panel");
   settingsBtn.addEventListener("click", () => {
     settingsPanel.hidden = !settingsPanel.hidden;
+  });
+
+  const editAvatarBtn = document.getElementById("edit-avatar-btn");
+  const avatarEditor = document.getElementById("avatar-editor");
+  editAvatarBtn.addEventListener("click", () => {
+    avatarEditor.hidden = !avatarEditor.hidden;
   });
 }
 
@@ -45,20 +60,57 @@ function roomTint(uid, privateRoomIds) {
   return ROOM_TINTS[index % ROOM_TINTS.length];
 }
 
-// 小人物美術素材(Kenney.nl 免費 CC0 的 Toon Characters)，每個人依照 uid 排序固定分配一種角色造型，
-// 這樣同一個人每次畫面重繪都會是同一個小人物，不會一直變來變去。
-const AVATAR_SPRITES = [
-  "assets/sprites/avatars/person-female.png",
-  "assets/sprites/avatars/person-male.png",
-  "assets/sprites/avatars/adventurer-female.png",
-  "assets/sprites/avatars/adventurer-male.png",
+// 小人物造型：每個人可以自己選一種喜歡的角色(見 avatar-editor 面板)，選了就存在
+// members/{uid}.avatarChoice；還沒選之前，依 uid 排序給一個預設值，重複也沒關係。
+const AVATAR_OPTIONS = [
+  { id: "pink", label: "粉髮雙馬尾", image: "assets/sprites/avatars/avatar-pink.png" },
+  { id: "goth", label: "暗黑風格", image: "assets/sprites/avatars/avatar-goth.png" },
+  { id: "glam", label: "名媛金髮", image: "assets/sprites/avatars/avatar-glam.png" },
+  { id: "schoolgirl", label: "元氣少女", image: "assets/sprites/avatars/avatar-schoolgirl.png" },
 ];
 
-function avatarSprite(uid) {
+function defaultAvatarId(uid) {
   const members = store.get("members") || [];
   const ids = members.map((m) => m.id).sort();
   const index = ids.indexOf(uid);
-  return AVATAR_SPRITES[(index === -1 ? 0 : index) % AVATAR_SPRITES.length];
+  return AVATAR_OPTIONS[(index === -1 ? 0 : index) % AVATAR_OPTIONS.length].id;
+}
+
+function avatarSprite(member) {
+  const chosen = AVATAR_OPTIONS.find((o) => o.id === member.avatarChoice);
+  if (chosen) return chosen.image;
+  const fallback = AVATAR_OPTIONS.find((o) => o.id === defaultAvatarId(member.id));
+  return fallback.image;
+}
+
+function myAvatarChoice() {
+  const members = store.get("members") || [];
+  const me = members.find((m) => m.id === currentUid);
+  return (me && me.avatarChoice) || defaultAvatarId(currentUid);
+}
+
+function renderAvatarOptions() {
+  if (!avatarOptionsEl) return;
+  const selected = myAvatarChoice();
+  avatarOptionsEl.innerHTML = "";
+
+  AVATAR_OPTIONS.forEach((item) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `decoration-option${selected === item.id ? " is-selected" : ""}`;
+
+    const icon = document.createElement("img");
+    icon.className = "decoration-icon";
+    icon.src = item.image;
+    icon.alt = "";
+
+    const label = document.createElement("span");
+    label.textContent = item.label;
+
+    btn.append(icon, label);
+    btn.addEventListener("click", () => updateAvatarChoice(dormId, currentUid, item.id));
+    avatarOptionsEl.appendChild(btn);
+  });
 }
 
 function memberName(uid) {
@@ -111,8 +163,13 @@ function buildRoomRects(members) {
 
 function renderRooms() {
   const members = store.get("members") || [];
-  mapEl.innerHTML = "";
   const rects = buildRoomRects(members);
+  renderRoomBoxes(members, rects);
+  renderAvatars(members, rects);
+}
+
+function renderRoomBoxes(members, rects) {
+  roomBoxesEl.innerHTML = "";
   const privateRoomIds = Object.keys(rects).filter((id) => id !== "common");
 
   Object.entries(rects).forEach(([roomId, rect]) => {
@@ -136,7 +193,7 @@ function renderRooms() {
       door.src = "assets/sprites/furniture/doorwayFront_SE.png";
       door.alt = "";
       box.appendChild(door);
-      mapEl.appendChild(box);
+      roomBoxesEl.appendChild(box);
       return;
     }
 
@@ -187,14 +244,19 @@ function renderRooms() {
       }
     }
 
-    mapEl.appendChild(box);
+    roomBoxesEl.appendChild(box);
   });
+}
 
+// 小人物用「同一顆節點只改位置」的方式更新，房間切換時才會滑過去，而不是憑空消失又出現在新地方。
+function renderAvatars(members, rects) {
   const byRoom = {};
   members.forEach((m) => {
     const room = rects[m.currentRoomId] ? m.currentRoomId : "common";
     (byRoom[room] = byRoom[room] || []).push(m);
   });
+
+  const visibleUids = new Set();
 
   Object.entries(byRoom).forEach(([roomId, roomMembers]) => {
     // 房間對我來說是關著的門，就看不到誰在裡面
@@ -207,32 +269,47 @@ function renderRooms() {
     const startOffset = -((roomMembers.length - 1) * spacing) / 2;
 
     roomMembers.forEach((member, index) => {
-      const isVisitorMember = member.role === "visitor";
-      const avatar = document.createElement("div");
-      avatar.className = `avatar status-${member.status || "offline"}${isVisitorMember ? " avatar-visitor" : ""}`;
-      avatar.style.left = `${centerLeft + startOffset + index * spacing}%`;
-      avatar.style.top = `${centerTop}%`;
-      avatar.title = `${member.displayName || "?"}${isVisitorMember ? "（訪客）" : ""} ${member.mood || ""}`;
-
-      const shadow = document.createElement("div");
-      shadow.className = "avatar-shadow";
-
-      const sprite = document.createElement("img");
-      sprite.className = "avatar-sprite";
-      sprite.src = avatarSprite(member.id);
-      sprite.alt = "";
-
-      const statusDot = document.createElement("span");
-      statusDot.className = "avatar-status-dot";
-
-      const nameTag = document.createElement("span");
-      nameTag.className = "avatar-name";
-      nameTag.textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
-
-      avatar.append(shadow, sprite, statusDot, nameTag);
-      mapEl.appendChild(avatar);
+      visibleUids.add(member.id);
+      const left = centerLeft + startOffset + index * spacing;
+      updateAvatarEl(member, left, centerTop);
     });
   });
+
+  // 房間變成關著的門(或人不見了)，對應的小人物節點也要移除，不然會卡在畫面上
+  for (const [uid, el] of avatarEls) {
+    if (!visibleUids.has(uid)) {
+      el.remove();
+      avatarEls.delete(uid);
+    }
+  }
+}
+
+function updateAvatarEl(member, left, top) {
+  const isVisitorMember = member.role === "visitor";
+  let el = avatarEls.get(member.id);
+
+  if (!el) {
+    el = document.createElement("div");
+    const shadow = document.createElement("div");
+    shadow.className = "avatar-shadow";
+    const sprite = document.createElement("img");
+    sprite.className = "avatar-sprite";
+    sprite.alt = "";
+    const statusDot = document.createElement("span");
+    statusDot.className = "avatar-status-dot";
+    const nameTag = document.createElement("span");
+    nameTag.className = "avatar-name";
+    el.append(shadow, sprite, statusDot, nameTag);
+    avatarLayerEl.appendChild(el);
+    avatarEls.set(member.id, el);
+  }
+
+  el.className = `avatar status-${member.status || "offline"}${isVisitorMember ? " avatar-visitor" : ""}`;
+  el.style.left = `${left}%`;
+  el.style.top = `${top}%`;
+  el.title = `${member.displayName || "?"}${isVisitorMember ? "（訪客）" : ""} ${member.mood || ""}`;
+  el.querySelector(".avatar-sprite").src = avatarSprite(member);
+  el.querySelector(".avatar-name").textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
 }
 
 function renderRoomActions() {

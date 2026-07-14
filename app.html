@@ -25,7 +25,12 @@
   <main class="app-main">
     <section id="view-map" class="app-view">
       <div id="room-map" class="room-map">
-        <!-- views/map.js 依 store 'members' 資料渲染 -->
+        <div id="room-boxes" class="room-boxes-layer">
+          <!-- views/map.js 依 store 'rooms'/'members' 資料渲染房間格子 -->
+        </div>
+        <div id="avatar-layer" class="avatar-layer">
+          <!-- views/map.js：每個人的小人物，位置用 CSS transition 移動，不整批重建 -->
+        </div>
       </div>
 
       <div id="map-hud-top" class="map-hud-top">
@@ -53,6 +58,14 @@
           <p class="decoration-editor-title">裝飾我的房間</p>
           <div id="decoration-options" class="decoration-options">
             <!-- views/decorations.js：可勾選的裝飾項目 -->
+          </div>
+        </div>
+
+        <button id="edit-avatar-btn" type="button" class="link-btn">選擇我的角色</button>
+        <div id="avatar-editor" class="decoration-editor" hidden>
+          <p class="decoration-editor-title">選擇我的角色</p>
+          <div id="avatar-options" class="decoration-options">
+            <!-- views/map.js：可選的角色造型 -->
           </div>
         </div>
       </div>

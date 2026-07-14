@@ -73,6 +73,10 @@ export function updateCurrentRoom(dormId, uid, roomId) {
   return updateDoc(doc(db, "dorms", dormId, "members", uid), { currentRoomId: roomId });
 }
 
+export function updateAvatarChoice(dormId, uid, avatarId) {
+  return updateDoc(doc(db, "dorms", dormId, "members", uid), { avatarChoice: avatarId });
+}
+
 export function incrementTaskCompleted(dormId, uid, delta = 1) {
   return updateDoc(doc(db, "dorms", dormId, "members", uid), {
     taskCompletedCount: increment(delta),
