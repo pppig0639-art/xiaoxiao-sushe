@@ -2,7 +2,7 @@
 // Firestore 的資料一律走網路，不快取，確保四人看到的狀態是即時的。
 // 每次改動靜態檔案時記得把 CACHE_NAME 版本號往上加，否則使用者會吃到舊快取。
 
-const CACHE_NAME = "xiaoxiao-dorm-shell-v20";
+const CACHE_NAME = "xiaoxiao-dorm-shell-v21";
 
 const SHELL_ASSETS = [
   "index.html",
@@ -42,6 +42,7 @@ const SHELL_ASSETS = [
   "assets/sprites/furniture/televisionModern_SE.png",
   "assets/sprites/furniture/bookcaseClosed_SE.png",
   "assets/sprites/furniture/lampRoundFloor_SE.png",
+  "assets/sprites/furniture/doorwayFront_SE.png",
   // 背景音效檔案(assets/sounds/*)不預先快取：檔案較大(每個 0.5~1.6MB)，
   // 只有使用者真的點了背景音效才需要下載，不用逼所有人一進站就先載這些。
 ];

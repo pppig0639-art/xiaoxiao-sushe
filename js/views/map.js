@@ -71,6 +71,15 @@ function myRole() {
   return me ? me.role || "member" : "member";
 }
 
+// 客廳、自己的房間，或是「我人現在就在裡面」的房間才看得到內部裝潢，
+// 其他人的房間沒被邀請進去之前，只會看到一扇門，不會偷看到裡面擺設。
+function canSeeInside(roomId) {
+  if (roomId === "common" || roomId === currentUid) return true;
+  const members = store.get("members") || [];
+  const me = members.find((m) => m.id === currentUid);
+  return !!me && me.currentRoomId === roomId;
+}
+
 // 訪客沒有自己的房間，只有正式室友(role !== "visitor")才會生成私人房間格子
 function buildRoomRects(members) {
   const ids = members.filter((m) => m.role !== "visitor").map((m) => m.id).sort();
@@ -91,22 +100,34 @@ function renderRooms() {
   const privateRoomIds = Object.keys(rects).filter((id) => id !== "common");
 
   Object.entries(rects).forEach(([roomId, rect]) => {
+    const visible = canSeeInside(roomId);
     const box = document.createElement("div");
-    box.className = `room-box ${roomId === "common" ? "room-box-common" : "room-box-private"}`;
+    box.className = `room-box ${roomId === "common" ? "room-box-common" : "room-box-private"}${visible ? "" : " room-box-locked"}`;
     box.style.left = `${rect.left}%`;
     box.style.top = `${rect.top}%`;
     box.style.width = `${rect.width}%`;
     box.style.height = `${rect.height}%`;
 
-    const tint = roomTint(roomId, privateRoomIds);
-    if (tint) {
-      box.style.boxShadow = `inset 0 0 0 999px ${tint}4d`;
-    }
-
     const label = document.createElement("span");
     label.className = "room-label";
     label.textContent = roomId === "common" ? "客廳" : `${memberName(roomId)}的房間`;
     box.appendChild(label);
+
+    if (!visible) {
+      // 還沒被邀請進去：只看得到一扇門，看不到裡面長怎樣
+      const door = document.createElement("img");
+      door.className = "furniture furniture-door";
+      door.src = "assets/sprites/furniture/doorwayFront_SE.png";
+      door.alt = "";
+      box.appendChild(door);
+      mapEl.appendChild(box);
+      return;
+    }
+
+    const tint = roomTint(roomId, privateRoomIds);
+    if (tint) {
+      box.style.boxShadow = `inset 0 0 0 999px ${tint}4d`;
+    }
 
     // 固定家具(Kenney.nl 免費美術素材，見 assets/sprites/furniture)
     if (roomId === "common") {
@@ -160,6 +181,9 @@ function renderRooms() {
   });
 
   Object.entries(byRoom).forEach(([roomId, roomMembers]) => {
+    // 房間對我來說是關著的門，就看不到誰在裡面
+    if (!canSeeInside(roomId)) return;
+
     const rect = rects[roomId];
     const centerLeft = rect.left + rect.width / 2;
     const centerTop = rect.top + rect.height / 2;

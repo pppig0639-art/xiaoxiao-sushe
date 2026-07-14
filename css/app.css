@@ -145,6 +145,21 @@ body {
   z-index: 2;
 }
 
+/* 還沒被邀請進去的房間：只顯示一扇門，看不到裡面裝潢/是誰在裡面 */
+.room-box-locked {
+  background: #d8cdb8;
+  background-image: none;
+}
+
+.furniture-door {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 55%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 3px 2px rgba(43, 38, 32, 0.25));
+}
+
 /* 房間裡的固定家具，圖片來自 Kenney.nl 的免費 CC0 素材(Furniture Kit)。
    用 height 固定高度、width:auto 讓圖片維持原本比例，不會變形。 */
 .furniture {
