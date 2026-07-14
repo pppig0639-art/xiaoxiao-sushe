@@ -36,6 +36,15 @@ export function initMapView(_dormId, uid) {
   });
 }
 
+// 每個人房間預設帶一點不同的顏色，這樣就算還沒手動裝飾，房間也不會長得一模一樣
+const ROOM_TINTS = ["#f6c8b6", "#c8dfc0", "#c3d9ec", "#ead9f0", "#f5e3a8", "#d8c8b0", "#f0c3d0", "#c3ece0"];
+
+function roomTint(uid, privateRoomIds) {
+  const index = privateRoomIds.indexOf(uid);
+  if (index === -1) return null;
+  return ROOM_TINTS[index % ROOM_TINTS.length];
+}
+
 function memberName(uid) {
   const members = store.get("members") || [];
   const m = members.find((x) => x.id === uid);
@@ -79,6 +88,7 @@ function renderRooms() {
   const members = store.get("members") || [];
   mapEl.innerHTML = "";
   const rects = buildRoomRects(members);
+  const privateRoomIds = Object.keys(rects).filter((id) => id !== "common");
 
   Object.entries(rects).forEach(([roomId, rect]) => {
     const box = document.createElement("div");
@@ -87,6 +97,11 @@ function renderRooms() {
     box.style.top = `${rect.top}%`;
     box.style.width = `${rect.width}%`;
     box.style.height = `${rect.height}%`;
+
+    const tint = roomTint(roomId, privateRoomIds);
+    if (tint) {
+      box.style.boxShadow = `inset 0 0 0 999px ${tint}4d`;
+    }
 
     const label = document.createElement("span");
     label.className = "room-label";
