@@ -2,7 +2,7 @@
 // 客廳跟自己的房間可以直接進，別人的房間要「敲門」，對方同意才會被自動移進去。
 
 import * as store from "../store.js";
-import { updateCurrentRoom, updateAvatarChoice } from "../db/members.js";
+import { updatePosition, updateAvatarChoice } from "../db/members.js";
 import { requestKnock, respondToKnock, deleteKnock } from "../db/rooms.js";
 import { DECORATION_ITEMS } from "./decorations.js";
 
@@ -18,6 +18,9 @@ let dormId = null;
 // uid -> 該人物在畫面上的 DOM 節點，重繪時盡量重複使用同一顆節點(只改 left/top)，
 // 這樣 CSS 的 transition 才能真的「滑過去」，而不是整批砍掉重建變成用跳的。
 const avatarEls = new Map();
+
+// 最新一次算出來的房間格子座標，點地圖的時候要用它判斷點到哪個房間、換算成房間內的相對位置。
+let latestRects = {};
 
 export function initMapView(_dormId, uid) {
   dormId = _dormId;
@@ -38,6 +41,8 @@ export function initMapView(_dormId, uid) {
   store.subscribe("rooms", renderRooms);
   store.subscribe("incomingKnocks", renderIncomingKnocks);
 
+  roomBoxesEl.addEventListener("click", onMapClick);
+
   const settingsBtn = document.getElementById("map-settings-btn");
   const settingsPanel = document.getElementById("map-settings-panel");
   settingsBtn.addEventListener("click", () => {
@@ -49,6 +54,52 @@ export function initMapView(_dormId, uid) {
   editAvatarBtn.addEventListener("click", () => {
     avatarEditor.hidden = !avatarEditor.hidden;
   });
+}
+
+// 點地圖：點在客廳/自己房間/正待著的房間裡 = 走過去；點在別人鎖著的門 = 走到門口 + 敲門。
+function onMapClick(evt) {
+  const mapRect = roomBoxesEl.getBoundingClientRect();
+  const xPct = ((evt.clientX - mapRect.left) / mapRect.width) * 100;
+  const yPct = ((evt.clientY - mapRect.top) / mapRect.height) * 100;
+
+  const roomId = Object.keys(latestRects).find((id) => {
+    const r = latestRects[id];
+    return xPct >= r.left && xPct <= r.left + r.width && yPct >= r.top && yPct <= r.top + r.height;
+  });
+  if (!roomId) return;
+
+  const isVisitor = myRole() === "visitor";
+  if (isVisitor && roomId !== "common") return; // 訪客只能在客廳走動，不能進私人房間、不能敲門
+
+  if (canSeeInside(roomId)) {
+    const rect = latestRects[roomId];
+    const localX = clampPct(((xPct - rect.left) / rect.width) * 100);
+    const localY = clampPct(((yPct - rect.top) / rect.height) * 100);
+    updatePosition(dormId, currentUid, roomId, localX, localY);
+  } else {
+    walkToDoorAndKnock(roomId);
+  }
+}
+
+function clampPct(v) {
+  return Math.max(4, Math.min(96, v));
+}
+
+function walkToDoorAndKnock(roomId) {
+  const myKnock = myOutgoingKnock();
+  const alreadyPending = myKnock && myKnock.roomId === roomId && myKnock.status === "pending";
+  if (!alreadyPending) {
+    requestKnock(dormId, roomId, currentUid, memberName(currentUid));
+  }
+
+  // 站到客廳裡、貼著那扇門下方的位置，看起來像走過去敲門
+  const doorRect = latestRects[roomId];
+  const commonRect = latestRects.common;
+  if (doorRect && commonRect) {
+    const doorCenterX = doorRect.left + doorRect.width / 2;
+    const localX = clampPct(((doorCenterX - commonRect.left) / commonRect.width) * 100);
+    updatePosition(dormId, currentUid, "common", localX, 8);
+  }
 }
 
 // 每個人房間預設帶一點不同的顏色，這樣就算還沒手動裝飾，房間也不會長得一模一樣
@@ -164,6 +215,7 @@ function buildRoomRects(members) {
 function renderRooms() {
   const members = store.get("members") || [];
   const rects = buildRoomRects(members);
+  latestRects = rects;
   renderRoomBoxes(members, rects);
   renderAvatars(members, rects);
 }
@@ -248,31 +300,31 @@ function renderRoomBoxes(members, rects) {
   });
 }
 
+// 每個人在自己房間格子裡的相對位置(posX/posY, 0~100)存在自己的 members 文件，
+// 沒存過(舊資料/剛加入)就用 uid 算一個 30~70 之間的預設偏移，至少不會每個人都疊在正中間。
+function defaultPos(uid, axis) {
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) hash = (hash * 31 + uid.charCodeAt(i)) >>> 0;
+  const seed = axis === "x" ? hash : hash >> 8;
+  return 35 + (seed % 30);
+}
+
 // 小人物用「同一顆節點只改位置」的方式更新，房間切換時才會滑過去，而不是憑空消失又出現在新地方。
 function renderAvatars(members, rects) {
-  const byRoom = {};
-  members.forEach((m) => {
-    const room = rects[m.currentRoomId] ? m.currentRoomId : "common";
-    (byRoom[room] = byRoom[room] || []).push(m);
-  });
-
   const visibleUids = new Set();
 
-  Object.entries(byRoom).forEach(([roomId, roomMembers]) => {
+  members.forEach((member) => {
+    const roomId = rects[member.currentRoomId] ? member.currentRoomId : "common";
     // 房間對我來說是關著的門，就看不到誰在裡面
     if (!canSeeInside(roomId)) return;
 
+    visibleUids.add(member.id);
     const rect = rects[roomId];
-    const centerLeft = rect.left + rect.width / 2;
-    const centerTop = rect.top + rect.height / 2;
-    const spacing = 9;
-    const startOffset = -((roomMembers.length - 1) * spacing) / 2;
-
-    roomMembers.forEach((member, index) => {
-      visibleUids.add(member.id);
-      const left = centerLeft + startOffset + index * spacing;
-      updateAvatarEl(member, left, centerTop);
-    });
+    const posX = member.posX ?? defaultPos(member.id, "x");
+    const posY = member.posY ?? defaultPos(member.id, "y");
+    const left = rect.left + (posX / 100) * rect.width;
+    const top = rect.top + (posY / 100) * rect.height;
+    updateAvatarEl(member, left, top);
   });
 
   // 房間變成關著的門(或人不見了)，對應的小人物節點也要移除，不然會卡在畫面上
@@ -312,38 +364,29 @@ function updateAvatarEl(member, left, top) {
   el.querySelector(".avatar-name").textContent = member.displayName ? member.displayName.slice(0, 2) : "?";
 }
 
+// 移動改成點地圖直接走過去，這裡只留「快速回到...」的捷徑按鈕，方便手機點不準的時候用。
 function renderRoomActions() {
-  const members = store.get("members") || [];
-  const myKnock = myOutgoingKnock();
   const isVisitor = myRole() === "visitor";
   roomActionsEl.innerHTML = "";
   roomActionsEl.className = "map-hud-bottom room-switcher";
 
+  const hint = document.createElement("span");
+  hint.className = "map-hint";
+  hint.textContent = "點地圖走過去，點門就是敲門";
+  roomActionsEl.appendChild(hint);
+
   const commonBtn = document.createElement("button");
-  commonBtn.textContent = "客廳(公共區)";
-  commonBtn.addEventListener("click", () => updateCurrentRoom(dormId, currentUid, "common"));
+  commonBtn.textContent = "快速回客廳";
+  commonBtn.addEventListener("click", () => updatePosition(dormId, currentUid, "common", 50, 50));
   roomActionsEl.appendChild(commonBtn);
 
   // 訪客沒有自己的房間、也不能敲別人的門（只能待在客廳看看）
   if (isVisitor) return;
 
   const ownRoomBtn = document.createElement("button");
-  ownRoomBtn.textContent = "我的房間";
-  ownRoomBtn.addEventListener("click", () => updateCurrentRoom(dormId, currentUid, currentUid));
+  ownRoomBtn.textContent = "回我的房間";
+  ownRoomBtn.addEventListener("click", () => updatePosition(dormId, currentUid, currentUid, 50, 50));
   roomActionsEl.appendChild(ownRoomBtn);
-
-  members
-    .filter((m) => m.id !== currentUid && m.role !== "visitor")
-    .forEach((member) => {
-      const btn = document.createElement("button");
-      const isPendingThisRoom = myKnock && myKnock.roomId === member.id && myKnock.status === "pending";
-      btn.textContent = isPendingThisRoom ? `已敲 ${member.displayName} 的門...` : `敲 ${member.displayName} 的門`;
-      btn.disabled = isPendingThisRoom;
-      btn.addEventListener("click", () => {
-        requestKnock(dormId, member.id, currentUid, memberName(currentUid));
-      });
-      roomActionsEl.appendChild(btn);
-    });
 }
 
 function renderMyKnockStatus() {
@@ -358,7 +401,7 @@ function renderMyKnockStatus() {
     myKnockStatusEl.textContent = `已敲 ${memberName(status.roomId)} 的門，等待回應...`;
   } else if (status.status === "approved") {
     myKnockStatusEl.textContent = `${memberName(status.roomId)} 讓你進來了！`;
-    updateCurrentRoom(dormId, currentUid, status.roomId);
+    updatePosition(dormId, currentUid, status.roomId, 50, 50);
     deleteKnock(dormId, status.roomId, currentUid);
   } else if (status.status === "denied") {
     myKnockStatusEl.textContent = `${memberName(status.roomId)} 現在不方便`;

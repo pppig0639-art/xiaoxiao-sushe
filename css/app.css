@@ -125,6 +125,7 @@ body {
   box-sizing: border-box;
   border: 2px solid rgba(74, 63, 53, 0.25);
   overflow: hidden;
+  cursor: pointer;
 }
 
 .room-box-private {
@@ -214,7 +215,7 @@ body {
    定位點放在角色腳底(translate(-50%, -100%))，感覺像站在地板上，而不是浮在房間正中間。 */
 .avatar {
   position: absolute;
-  width: 34px;
+  width: 46px;
   text-align: center;
   transform: translate(-50%, -100%);
   transition: left 0.3s ease, top 0.3s ease;
@@ -287,6 +288,15 @@ body {
 
 .room-switcher button:disabled {
   opacity: 0.6;
+}
+
+.map-hint {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  margin-right: var(--space-1);
 }
 
 .knock-banner {
@@ -454,6 +464,45 @@ body {
   display: block;
   height: 100%;
   background: var(--color-primary);
+}
+
+.pet-emoji {
+  font-size: 4rem;
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+
+.pet-name-row {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+  margin-bottom: var(--space-2);
+}
+
+.pet-name-row input {
+  max-width: 140px;
+  text-align: center;
+}
+
+.pet-species-row {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.pet-species-option {
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.pet-species-option.is-selected {
+  border-color: var(--color-primary);
+  background: #fff3e0;
 }
 
 /* --- 底部 Tab Bar --- */

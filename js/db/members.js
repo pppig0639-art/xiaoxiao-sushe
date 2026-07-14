@@ -73,6 +73,16 @@ export function updateCurrentRoom(dormId, uid, roomId) {
   return updateDoc(doc(db, "dorms", dormId, "members", uid), { currentRoomId: roomId });
 }
 
+// posX/posY 是「在目前房間格子裡的相對位置(0~100)」，不是整張地圖的絕對座標，
+// 這樣房間格子大小不管怎麼變，人物位置都還是合理的。
+export function updatePosition(dormId, uid, roomId, posX, posY) {
+  return updateDoc(doc(db, "dorms", dormId, "members", uid), {
+    currentRoomId: roomId,
+    posX,
+    posY,
+  });
+}
+
 export function updateAvatarChoice(dormId, uid, avatarId) {
   return updateDoc(doc(db, "dorms", dormId, "members", uid), { avatarChoice: avatarId });
 }
