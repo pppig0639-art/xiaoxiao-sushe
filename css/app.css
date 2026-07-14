@@ -337,19 +337,23 @@ body {
   object-fit: contain;
 }
 
+/* 裝飾品放在房間左側直排，避開右下角固定的床，才不會疊在一起看起來很亂 */
 .room-decorations {
   position: absolute;
-  bottom: 4%;
+  top: 22px;
+  bottom: 6%;
   left: 4%;
   z-index: 2;
   display: flex;
-  align-items: flex-end;
-  gap: 4px;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 3px;
 }
 
 .room-decoration-chip {
   width: auto;
-  height: 30px;
+  height: 26px;
   filter: drop-shadow(0 2px 1px rgba(43, 38, 32, 0.2));
 }
 
