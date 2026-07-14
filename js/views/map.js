@@ -93,16 +93,26 @@ function renderRooms() {
     label.textContent = roomId === "common" ? "客廳" : `${memberName(roomId)}的房間`;
     box.appendChild(label);
 
-    // 簡單家具(純 CSS 色塊)，讓房間看起來不只是一塊空白色塊
+    // 固定家具(Kenney.nl 免費美術素材，見 assets/sprites/furniture)
     if (roomId === "common") {
-      const rug = document.createElement("div");
-      rug.className = "furniture-rug";
-      const sofa = document.createElement("div");
-      sofa.className = "furniture-sofa";
-      box.append(rug, sofa);
+      const rug = document.createElement("img");
+      rug.className = "furniture furniture-rug";
+      rug.src = "assets/sprites/furniture/rugRounded_SE.png";
+      rug.alt = "";
+      const sofa = document.createElement("img");
+      sofa.className = "furniture furniture-sofa";
+      sofa.src = "assets/sprites/furniture/loungeSofa_SE.png";
+      sofa.alt = "";
+      const table = document.createElement("img");
+      table.className = "furniture furniture-coffee-table";
+      table.src = "assets/sprites/furniture/tableCoffee_SE.png";
+      table.alt = "";
+      box.append(rug, sofa, table);
     } else {
-      const bed = document.createElement("div");
-      bed.className = "furniture-bed";
+      const bed = document.createElement("img");
+      bed.className = "furniture furniture-bed";
+      bed.src = "assets/sprites/furniture/bedSingle_SE.png";
+      bed.alt = "";
       box.appendChild(bed);
     }
 
@@ -114,9 +124,10 @@ function renderRooms() {
         decorations.forEach((decoId) => {
           const item = DECORATION_ITEMS.find((d) => d.id === decoId);
           if (!item) return;
-          const chip = document.createElement("span");
+          const chip = document.createElement("img");
           chip.className = "room-decoration-chip";
-          chip.style.background = item.color;
+          chip.src = item.image;
+          chip.alt = "";
           chip.title = item.label;
           chipRow.appendChild(chip);
         });

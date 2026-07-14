@@ -1,16 +1,16 @@
-// 房間裝飾：預設幾樣簡單的裝飾項目（用顏色色塊代表，不需要美術素材），
+// 房間裝飾：用 Kenney.nl 的免費 CC0 美術素材(Furniture Kit，https://kenney.nl/assets/furniture-kit)，
 // 房主可以勾選要不要放在自己房間，其他人在地圖上看得到。
 
 import * as store from "../store.js";
 import { updateDecorations } from "../db/rooms.js";
 
 export const DECORATION_ITEMS = [
-  { id: "desk", label: "書桌", color: "#c8a165" },
-  { id: "plant", label: "盆栽", color: "#6b9b5e" },
-  { id: "poster", label: "海報", color: "#d4738a" },
-  { id: "rug", label: "地毯", color: "#7a8fc4" },
-  { id: "bookshelf", label: "書櫃", color: "#8a5a3b" },
-  { id: "lamp", label: "檯燈", color: "#e8b84b" },
+  { id: "desk", label: "書桌", image: "assets/sprites/furniture/desk_SE.png" },
+  { id: "plant", label: "盆栽", image: "assets/sprites/furniture/pottedPlant_SE.png" },
+  { id: "tv", label: "電視", image: "assets/sprites/furniture/televisionModern_SE.png" },
+  { id: "rug", label: "地毯", image: "assets/sprites/furniture/rugRounded_SE.png" },
+  { id: "bookshelf", label: "書櫃", image: "assets/sprites/furniture/bookcaseClosed_SE.png" },
+  { id: "lamp", label: "檯燈", image: "assets/sprites/furniture/lampRoundFloor_SE.png" },
 ];
 
 let dormId = null;
@@ -48,9 +48,10 @@ function renderOptions() {
     btn.type = "button";
     btn.className = `decoration-option${selected.includes(item.id) ? " is-selected" : ""}`;
 
-    const icon = document.createElement("span");
+    const icon = document.createElement("img");
     icon.className = "decoration-icon";
-    icon.style.background = item.color;
+    icon.src = item.image;
+    icon.alt = "";
 
     const label = document.createElement("span");
     label.textContent = item.label;

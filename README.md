@@ -43,8 +43,16 @@ js/
 
 assets/
   icons/                PWA icons（目前是預留路徑，尚未放實際圖檔）
-  sprites/              小人物/寵物/房間素材（尚未放實際圖檔）
+  sprites/
+    furniture/          房間家具素材，見下方「美術素材來源」
 ```
+
+## 美術素材來源
+
+房間家具用 [Kenney.nl](https://kenney.nl) 的免費素材 [Furniture Kit](https://kenney.nl/assets/furniture-kit)，
+CC0 授權（公共領域，不需要標示來源也可以商用，這裡列出來只是方便之後找同系列素材）。
+小人物目前還是純 CSS 畫的圓形，之後想找同風格的角色素材可以先看 Kenney 有沒有搭配的角色包，
+或去 [itch.io](https://itch.io/game-assets/free) 搜尋 "free character sprite"。
 
 ## 資料模型
 

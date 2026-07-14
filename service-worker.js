@@ -2,7 +2,7 @@
 // Firestore 的資料一律走網路，不快取，確保四人看到的狀態是即時的。
 // 每次改動靜態檔案時記得把 CACHE_NAME 版本號往上加，否則使用者會吃到舊快取。
 
-const CACHE_NAME = "xiaoxiao-dorm-shell-v17";
+const CACHE_NAME = "xiaoxiao-dorm-shell-v18";
 
 const SHELL_ASSETS = [
   "index.html",
@@ -33,6 +33,15 @@ const SHELL_ASSETS = [
   "js/views/status.js",
   "js/views/ambience.js",
   "js/views/decorations.js",
+  "assets/sprites/furniture/bedSingle_SE.png",
+  "assets/sprites/furniture/loungeSofa_SE.png",
+  "assets/sprites/furniture/tableCoffee_SE.png",
+  "assets/sprites/furniture/rugRounded_SE.png",
+  "assets/sprites/furniture/desk_SE.png",
+  "assets/sprites/furniture/pottedPlant_SE.png",
+  "assets/sprites/furniture/televisionModern_SE.png",
+  "assets/sprites/furniture/bookcaseClosed_SE.png",
+  "assets/sprites/furniture/lampRoundFloor_SE.png",
 ];
 
 self.addEventListener("install", (event) => {
