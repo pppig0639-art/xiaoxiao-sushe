@@ -3,7 +3,7 @@
 
 import * as store from "../store.js";
 import { updatePosition, updateAvatarChoice } from "../db/members.js";
-import { requestKnock, respondToKnock, deleteKnock } from "../db/rooms.js";
+import { requestKnock, respondToKnock, deleteKnock, updateFurniturePosition } from "../db/rooms.js";
 import { sendAction } from "../db/actions.js";
 import { DECORATION_ITEMS } from "./decorations.js";
 
@@ -25,6 +25,7 @@ let roomActionsEl = null;
 let knockBannerListEl = null;
 let myKnockStatusEl = null;
 let avatarOptionsEl = null;
+let currentRoomLabelEl = null;
 let currentUid = null;
 let dormId = null;
 
@@ -45,6 +46,7 @@ export function initMapView(_dormId, uid) {
   knockBannerListEl = document.getElementById("knock-banner-list");
   myKnockStatusEl = document.getElementById("my-knock-status");
   avatarOptionsEl = document.getElementById("avatar-options");
+  currentRoomLabelEl = document.getElementById("current-room-label");
 
   store.subscribe("members", () => {
     renderRooms();
@@ -238,6 +240,70 @@ function roomDecorations(roomId) {
   return (room && room.decorations) || [];
 }
 
+// 家具/裝飾品在房間裡的預設位置(x/y, 0~100)，房主拖過之後就改存 Firestore 的
+// furniturePositions，這裡只是「還沒拖過」時的起始擺放，讓房間不會一開始全部疊在原點。
+const DEFAULT_FURNITURE_POS = {
+  bed: { x: 80, y: 78 },
+  desk: { x: 15, y: 25 },
+  plant: { x: 15, y: 42 },
+  tv: { x: 15, y: 59 },
+  rug: { x: 50, y: 88 },
+  bookshelf: { x: 32, y: 25 },
+  lamp: { x: 32, y: 42 },
+};
+
+function furniturePositionOf(roomId, itemId) {
+  const rooms = store.get("rooms") || [];
+  const room = rooms.find((r) => r.id === roomId);
+  const saved = room && room.furniturePositions && room.furniturePositions[itemId];
+  return saved || DEFAULT_FURNITURE_POS[itemId] || { x: 50, y: 50 };
+}
+
+// 只有房主在自己房間裡看的時候才能拖家具；別人來作客(訪客/被放進來的朋友)只能看擺設，不能動。
+function makeDraggable(el, roomId, itemId) {
+  let dragging = false;
+  let startClientX = 0;
+  let startClientY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+
+  el.classList.add("furniture-draggable");
+
+  el.addEventListener("pointerdown", (evt) => {
+    if (roomId !== currentUid) return; // 不是自己的房間，不能拖
+    evt.stopPropagation();
+    dragging = true;
+    el.classList.add("is-dragging");
+    el.setPointerCapture(evt.pointerId);
+    startClientX = evt.clientX;
+    startClientY = evt.clientY;
+    startLeft = parseFloat(el.style.left) || 50;
+    startTop = parseFloat(el.style.top) || 50;
+  });
+
+  el.addEventListener("pointermove", (evt) => {
+    if (!dragging) return;
+    evt.stopPropagation();
+    const mapRect = roomBoxesEl.getBoundingClientRect();
+    const dxPct = ((evt.clientX - startClientX) / mapRect.width) * 100;
+    const dyPct = ((evt.clientY - startClientY) / mapRect.height) * 100;
+    el.style.left = `${clampPct(startLeft + dxPct)}%`;
+    el.style.top = `${clampPct(startTop + dyPct)}%`;
+  });
+
+  const endDrag = (evt) => {
+    if (!dragging) return;
+    evt.stopPropagation();
+    dragging = false;
+    el.classList.remove("is-dragging");
+    const x = parseFloat(el.style.left);
+    const y = parseFloat(el.style.top);
+    updateFurniturePosition(dormId, roomId, itemId, x, y);
+  };
+  el.addEventListener("pointerup", endDrag);
+  el.addEventListener("pointercancel", endDrag);
+}
+
 function myRole() {
   const members = store.get("members") || [];
   const me = members.find((m) => m.id === currentUid);
@@ -268,10 +334,9 @@ function renderRoomBoxes(members, myRoomId) {
   box.style.width = "100%";
   box.style.height = "100%";
 
-  const label = document.createElement("span");
-  label.className = "room-label";
-  label.textContent = isCommon ? "客廳" : myRoomId === currentUid ? "我的房間" : `${memberName(myRoomId)}的房間`;
-  box.appendChild(label);
+  // 「你目前在哪」放在頁面頂端的 header 裡，跟地圖上其他浮動元件(敲門通知等)分開，
+  // 不會因為疊在同一個角落而互相蓋到看起來很怪
+  currentRoomLabelEl.textContent = `你在：${isCommon ? "客廳" : myRoomId === currentUid ? "我的房間" : `${memberName(myRoomId)}的房間`}`;
 
   const tint = roomTint(myRoomId, privateRoomIds);
   if (tint) {
@@ -319,28 +384,33 @@ function renderRoomBoxes(members, myRoomId) {
       });
     box.appendChild(doorRow);
   } else {
+    // 床跟裝飾品都是可以拖曳的獨立定位物件(只有房主在自己房間裡才能拖)，
+    // 位置存在 rooms/{roomId}.furniturePositions，沒拖過就用預設位置。
+    const bedPos = furniturePositionOf(myRoomId, "bed");
     const bed = document.createElement("img");
     bed.className = "furniture furniture-bed";
     bed.src = "assets/sprites/furniture/bedSingle_SE.png";
     bed.alt = "";
+    bed.style.left = `${bedPos.x}%`;
+    bed.style.top = `${bedPos.y}%`;
+    makeDraggable(bed, myRoomId, "bed");
     box.appendChild(bed);
 
     const decorations = roomDecorations(myRoomId);
-    if (decorations.length > 0) {
-      const chipRow = document.createElement("div");
-      chipRow.className = "room-decorations";
-      decorations.forEach((decoId) => {
-        const item = DECORATION_ITEMS.find((d) => d.id === decoId);
-        if (!item) return;
-        const chip = document.createElement("img");
-        chip.className = "room-decoration-chip";
-        chip.src = item.image;
-        chip.alt = "";
-        chip.title = item.label;
-        chipRow.appendChild(chip);
-      });
-      box.appendChild(chipRow);
-    }
+    decorations.forEach((decoId) => {
+      const item = DECORATION_ITEMS.find((d) => d.id === decoId);
+      if (!item) return;
+      const pos = furniturePositionOf(myRoomId, decoId);
+      const chip = document.createElement("img");
+      chip.className = "room-decoration-chip";
+      chip.src = item.image;
+      chip.alt = "";
+      chip.title = item.label;
+      chip.style.left = `${pos.x}%`;
+      chip.style.top = `${pos.y}%`;
+      makeDraggable(chip, myRoomId, decoId);
+      box.appendChild(chip);
+    });
 
     // 離開房間、回客廳的門
     const exitBtn = document.createElement("button");

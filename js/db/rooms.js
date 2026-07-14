@@ -46,6 +46,14 @@ export function updateDecorations(dormId, uid, decorations) {
   return updateDoc(doc(db, "dorms", dormId, "rooms", uid), { decorations });
 }
 
+// 家具/裝飾品在房間裡的位置(x/y 都是 0~100 的相對百分比)，只有房主拖得動，
+// 用點記法(furniturePositions.床)只更新那一件，不會動到其他家具的位置。
+export function updateFurniturePosition(dormId, roomId, itemId, x, y) {
+  return updateDoc(doc(db, "dorms", dormId, "rooms", roomId), {
+    [`furniturePositions.${itemId}`]: { x, y },
+  });
+}
+
 export function createCommonRoom(dormId) {
   return setDoc(doc(db, "dorms", dormId, "rooms", "common"), {
     type: "common",

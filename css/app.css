@@ -34,6 +34,13 @@ body {
   color: var(--color-muted);
 }
 
+.current-room-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--color-primary-dark);
+}
+
 .app-main {
   flex: 1 1 auto;
   min-height: 0;
@@ -150,20 +157,12 @@ body {
   );
 }
 
-.room-label {
-  position: absolute;
-  top: var(--space-1);
-  left: var(--space-1);
-  font-size: 0.7rem;
-  color: var(--color-muted);
-  z-index: 2;
-}
-
 /* 客廳裡去敲每個室友房門的門(一排)，跟私人房間裡「離開」用的門，
-   都是可以點的按鈕，不是絕對定位貼在格子裡的裝飾用家具。 */
+   都是可以點的按鈕，不是絕對定位貼在格子裡的裝飾用家具。
+   刻意跟頂端的敲門通知 HUD(.map-hud-top)留一段安全距離，兩個浮動區塊才不會疊在一起。 */
 .scene-doors {
   position: absolute;
-  top: 10%;
+  top: 22%;
   left: 0;
   right: 0;
   z-index: 2;
@@ -211,9 +210,8 @@ body {
 }
 
 .furniture-bed {
-  right: 6%;
-  bottom: 6%;
   height: 62%;
+  transform: translate(-50%, -50%);
 }
 
 .furniture-sofa {
@@ -473,24 +471,27 @@ body {
   object-fit: contain;
 }
 
-/* 裝飾品放在房間左側直排，避開右下角固定的床，才不會疊在一起看起來很亂 */
-.room-decorations {
+/* 裝飾品現在是各自獨立定位、可以拖曳的物件(見 .furniture-draggable)，
+   不再是擠在左側的固定直排 —— 位置存在 rooms/{roomId}.furniturePositions。 */
+.room-decoration-chip {
   position: absolute;
-  top: 22px;
-  bottom: 6%;
-  left: 4%;
+  width: auto;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 1px rgba(43, 38, 32, 0.2));
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-start;
-  gap: 3px;
 }
 
-.room-decoration-chip {
-  width: auto;
-  height: 26px;
-  filter: drop-shadow(0 2px 1px rgba(43, 38, 32, 0.2));
+/* 可拖曳的家具/裝飾品：只有房主在自己房間才拖得動(見 map.js 的 makeDraggable)，
+   touch-action:none 是為了讓手機上的拖曳手勢不會被瀏覽器當成頁面捲動。 */
+.furniture-draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.furniture-draggable.is-dragging {
+  cursor: grabbing;
+  opacity: 0.85;
 }
 
 /* --- 留言板 / 輪值 --- */
