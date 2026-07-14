@@ -9,6 +9,7 @@ const state = {
   messages: [],
   pet: null,
   incomingKnocks: [],
+  actions: [],
 };
 
 const listeners = {
@@ -18,6 +19,7 @@ const listeners = {
   messages: new Set(),
   pet: new Set(),
   incomingKnocks: new Set(),
+  actions: new Set(),
 };
 
 export function set(key, value) {

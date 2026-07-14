@@ -89,8 +89,11 @@
         <button type="submit">新增今天的任務</button>
       </form>
       <div id="message-board">
+        <select id="message-channel-select" class="channel-select">
+          <!-- views/messages.js：公共頻道 + 每個人的悄悄話 -->
+        </select>
         <div id="message-list" class="message-list">
-          <!-- TODO(views/messages.js): 留言列表 -->
+          <!-- views/messages.js: 留言列表 -->
         </div>
         <form id="message-form">
           <input id="message-input" type="text" placeholder="留言給室友..." autocomplete="off" />

@@ -159,19 +159,47 @@ body {
   z-index: 2;
 }
 
-/* 還沒被邀請進去的房間：只顯示一扇門，看不到裡面裝潢/是誰在裡面 */
-.room-box-locked {
-  background: #d8cdb8;
-  background-image: none;
+/* 客廳裡去敲每個室友房門的門(一排)，跟私人房間裡「離開」用的門，
+   都是可以點的按鈕，不是絕對定位貼在格子裡的裝飾用家具。 */
+.scene-doors {
+  position: absolute;
+  top: 10%;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
 }
 
-.furniture-door {
+.scene-door,
+.scene-exit-door {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(74, 63, 53, 0.25);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.7rem;
+  color: var(--color-text);
+}
+
+.scene-door img,
+.scene-exit-door img {
+  height: 40px;
+  width: auto;
+}
+
+.scene-exit-door {
   position: absolute;
+  bottom: 5%;
   left: 50%;
-  top: 50%;
-  height: 55%;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 3px 2px rgba(43, 38, 32, 0.25));
+  transform: translateX(-50%);
+  z-index: 2;
 }
 
 /* 房間裡的固定家具，圖片來自 Kenney.nl 的免費 CC0 素材(Furniture Kit)。
@@ -220,6 +248,61 @@ body {
   transform: translate(-50%, -100%);
   transition: left 0.3s ease, top 0.3s ease;
   z-index: 3;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* 點別人的小人物跳出來的動作選單(打招呼/戳頭等) */
+.action-menu {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 50px));
+  background: #fff;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+  pointer-events: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-menu button {
+  white-space: nowrap;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.75rem;
+  color: var(--color-text);
+}
+
+.action-menu button:hover {
+  background: #fff3e0;
+}
+
+/* 收到動作訊號時冒在對方頭上的小泡泡 */
+.action-bubble {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  z-index: 6;
+  animation: action-bubble-pop 2.2s ease forwards;
+}
+
+@keyframes action-bubble-pop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
 }
 
 .avatar-shadow {
@@ -243,6 +326,11 @@ body {
 
 .avatar-visitor .avatar-sprite {
   filter: grayscale(0.55) drop-shadow(0 2px 1px rgba(43, 38, 32, 0.25));
+}
+
+/* 下線的人整個人物(不只是狀態小圓點)都變灰階，一眼就能看出誰不在線上 */
+.avatar.status-offline .avatar-sprite {
+  filter: grayscale(1) opacity(0.7) drop-shadow(0 2px 1px rgba(43, 38, 32, 0.25));
 }
 
 .avatar-status-dot {
@@ -425,6 +513,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.channel-select {
+  width: 100%;
+  margin-bottom: var(--space-2);
 }
 
 .message-list {

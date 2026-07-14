@@ -12,6 +12,7 @@ import { listenRooms, listenIncomingKnocks } from "./db/rooms.js";
 import { listenDuties } from "./db/duties.js";
 import { listenMessages } from "./db/messages.js";
 import { listenPet, ensurePetExists } from "./db/pet.js";
+import { listenActions } from "./db/actions.js";
 
 import { initMapView } from "./views/map.js";
 import { initDutiesView } from "./views/duties.js";
@@ -65,6 +66,7 @@ async function bootstrap(user) {
   listenMessages(dormId);
   listenPet(dormId);
   listenIncomingKnocks(dormId, user.uid);
+  listenActions(dormId);
 
   initMapView(dormId, user.uid);
   initDutiesView(dormId, dorm ? dorm.mode : "shared");

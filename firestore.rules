@@ -95,9 +95,23 @@ service cloud.firestore {
       }
 
       match /messages/{messageId} {
-        allow read: if isDormMember(dormId);
-        allow create: if isDormMember(dormId) && request.resource.data.authorUid == request.auth.uid;
+        // 公共頻道的訊息沒有 participants 欄位，大家都看得到；
+        // 悄悄話一定要帶 participants(剛好兩個 uid)，只有裡面的人自己讀得到 ——
+        // 篩選頻道只在畫面上做是不夠的，這裡才是真正擋住別人偷看悄悄話的地方。
+        allow read: if isDormMember(dormId)
+          && (!('participants' in resource.data) || request.auth.uid in resource.data.participants);
+        allow create: if isDormMember(dormId)
+          && request.resource.data.authorUid == request.auth.uid
+          && (!('participants' in request.resource.data) || request.auth.uid in request.resource.data.participants);
         allow update, delete: if false;
+      }
+
+      match /actions/{actionId} {
+        // 打招呼/攻擊某部位之類的小動作，一閃即逝的訊號，發送者自己可以刪掉
+        allow read: if isDormMember(dormId);
+        allow create: if isDormMember(dormId) && request.resource.data.fromUid == request.auth.uid;
+        allow delete: if isDormMember(dormId) && resource.data.fromUid == request.auth.uid;
+        allow update: if false;
       }
 
       match /pet/{petId} {

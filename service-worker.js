@@ -2,7 +2,7 @@
 // Firestore 的資料一律走網路，不快取，確保四人看到的狀態是即時的。
 // 每次改動靜態檔案時記得把 CACHE_NAME 版本號往上加，否則使用者會吃到舊快取。
 
-const CACHE_NAME = "xiaoxiao-dorm-shell-v24";
+const CACHE_NAME = "xiaoxiao-dorm-shell-v25";
 
 const SHELL_ASSETS = [
   "index.html",
@@ -26,6 +26,7 @@ const SHELL_ASSETS = [
   "js/db/duties.js",
   "js/db/messages.js",
   "js/db/pet.js",
+  "js/db/actions.js",
   "js/views/map.js",
   "js/views/duties.js",
   "js/views/messages.js",
