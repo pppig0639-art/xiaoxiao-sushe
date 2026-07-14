@@ -2,7 +2,7 @@
 // 客廳跟自己的房間可以直接進，別人的房間要「敲門」，對方同意才會被自動移進去。
 
 import * as store from "../store.js";
-import { updatePosition, updateAvatarChoice } from "../db/members.js";
+import { updatePosition, updateAvatarChoice, updateStatus } from "../db/members.js";
 import { requestKnock, respondToKnock, deleteKnock, updateFurniturePosition } from "../db/rooms.js";
 import { sendAction } from "../db/actions.js";
 import { DECORATION_ITEMS } from "./decorations.js";
@@ -28,6 +28,9 @@ let avatarOptionsEl = null;
 let currentRoomLabelEl = null;
 let currentUid = null;
 let dormId = null;
+
+// 家具拖曳要先手動開啟(在「裝飾我的房間」面板按按鈕)，平常逛地圖點來點去不會不小心拖到家具。
+let furnitureEditMode = false;
 
 // uid -> 該人物在畫面上的 DOM 節點，重繪時盡量重複使用同一顆節點(只改 left/top)，
 // 這樣 CSS 的 transition 才能真的「滑過去」，而不是整批砍掉重建變成用跳的。
@@ -70,6 +73,14 @@ export function initMapView(_dormId, uid) {
   const avatarEditor = document.getElementById("avatar-editor");
   editAvatarBtn.addEventListener("click", () => {
     avatarEditor.hidden = !avatarEditor.hidden;
+  });
+
+  const furnitureEditBtn = document.getElementById("toggle-furniture-edit-btn");
+  furnitureEditBtn.addEventListener("click", () => {
+    furnitureEditMode = !furnitureEditMode;
+    furnitureEditBtn.textContent = furnitureEditMode ? "完成擺放" : "開始擺放家具位置";
+    furnitureEditBtn.classList.toggle("is-active", furnitureEditMode);
+    renderRooms(); // 家具每次都是重新畫過，直接重繪就會套用新的可拖曳狀態
   });
 }
 
@@ -250,6 +261,8 @@ const DEFAULT_FURNITURE_POS = {
   rug: { x: 50, y: 88 },
   bookshelf: { x: 32, y: 25 },
   lamp: { x: 32, y: 42 },
+  sofa: { x: 62, y: 55 },
+  "coffee-table": { x: 40, y: 60 },
 };
 
 function furniturePositionOf(roomId, itemId) {
@@ -259,7 +272,15 @@ function furniturePositionOf(roomId, itemId) {
   return saved || DEFAULT_FURNITURE_POS[itemId] || { x: 50, y: 50 };
 }
 
-// 只有房主在自己房間裡看的時候才能拖家具；別人來作客(訪客/被放進來的朋友)只能看擺設，不能動。
+// 客廳是大家共用的，任何寢室成員都能拖；私人房間只有房主自己拖得動，
+// 別人來作客(訪客/被放進來的朋友)只能看擺設不能動。另外要先按「開始擺放家具位置」
+// 進入編輯模式才拖得動，平常逛地圖點來點去不會不小心拖到家具。
+function canDragFurniture(roomId) {
+  if (!furnitureEditMode) return false;
+  if (roomId === "common") return true;
+  return roomId === currentUid;
+}
+
 function makeDraggable(el, roomId, itemId) {
   let dragging = false;
   let startClientX = 0;
@@ -268,9 +289,10 @@ function makeDraggable(el, roomId, itemId) {
   let startTop = 0;
 
   el.classList.add("furniture-draggable");
+  el.classList.toggle("is-edit-mode", canDragFurniture(roomId));
 
   el.addEventListener("pointerdown", (evt) => {
-    if (roomId !== currentUid) return; // 不是自己的房間，不能拖
+    if (!canDragFurniture(roomId)) return;
     evt.stopPropagation();
     dragging = true;
     el.classList.add("is-dragging");
@@ -319,6 +341,42 @@ function renderRooms() {
   const myRoomId = currentRoomId();
   renderRoomBoxes(members, myRoomId);
   renderAvatars(members, myRoomId);
+  renderBedPrompt(members, myRoomId);
+}
+
+// 走到自己房間的床邊會冒出「睡覺」選項，點了直接把狀態改成 sleeping，
+// 畫面上的睡覺全螢幕遮罩(見 views/status.js)是靠這個狀態欄位反應出來的，不是這裡直接控制。
+const BED_PROXIMITY_THRESHOLD = 18;
+
+function renderBedPrompt(members, myRoomId) {
+  const existing = document.querySelector(".bed-prompt");
+  if (existing) existing.remove();
+
+  if (myRoomId !== currentUid) return; // 只有在自己房間才看得到自己的床
+
+  const me = members.find((m) => m.id === currentUid);
+  if (!me || me.status === "sleeping") return;
+
+  const bedPos = furniturePositionOf(myRoomId, "bed");
+  const myX = me.posX ?? defaultPos(me.id, "x");
+  const myY = me.posY ?? defaultPos(me.id, "y");
+  if (Math.hypot(myX - bedPos.x, myY - bedPos.y) > BED_PROXIMITY_THRESHOLD) return;
+
+  const prompt = document.createElement("div");
+  prompt.className = "bed-prompt";
+  prompt.style.left = `${bedPos.x}%`;
+  prompt.style.top = `${bedPos.y}%`;
+
+  const restBtn = document.createElement("button");
+  restBtn.type = "button";
+  restBtn.textContent = "😴 睡覺";
+  restBtn.addEventListener("click", (evt) => {
+    evt.stopPropagation();
+    updateStatus(dormId, currentUid, "sleeping");
+  });
+
+  prompt.appendChild(restBtn);
+  roomBoxesEl.appendChild(prompt);
 }
 
 function renderRoomBoxes(members, myRoomId) {
@@ -343,20 +401,36 @@ function renderRoomBoxes(members, myRoomId) {
     box.style.boxShadow = `inset 0 0 0 999px ${tint}4d`;
   }
 
-  // 固定家具(Kenney.nl 免費美術素材，見 assets/sprites/furniture)
+  // 固定家具(Kenney.nl 免費美術素材，見 assets/sprites/furniture)。
+  // 客廳是大家共用的空間，沒有單一房主，所以每個寢室成員都能拖(見 canDragFurniture)。
   if (isCommon) {
+    const rugPos = furniturePositionOf("common", "rug");
     const rug = document.createElement("img");
     rug.className = "furniture furniture-rug";
     rug.src = "assets/sprites/furniture/rugRounded_SE.png";
     rug.alt = "";
+    rug.style.left = `${rugPos.x}%`;
+    rug.style.top = `${rugPos.y}%`;
+    makeDraggable(rug, "common", "rug");
+
+    const sofaPos = furniturePositionOf("common", "sofa");
     const sofa = document.createElement("img");
     sofa.className = "furniture furniture-sofa";
     sofa.src = "assets/sprites/furniture/loungeSofa_SE.png";
     sofa.alt = "";
+    sofa.style.left = `${sofaPos.x}%`;
+    sofa.style.top = `${sofaPos.y}%`;
+    makeDraggable(sofa, "common", "sofa");
+
+    const tablePos = furniturePositionOf("common", "coffee-table");
     const table = document.createElement("img");
     table.className = "furniture furniture-coffee-table";
     table.src = "assets/sprites/furniture/tableCoffee_SE.png";
     table.alt = "";
+    table.style.left = `${tablePos.x}%`;
+    table.style.top = `${tablePos.y}%`;
+    makeDraggable(table, "common", "coffee-table");
+
     box.append(rug, sofa, table);
 
     // 每個室友房間的門，排成一排；點門 = 走過去敲門，不用敲很多次
@@ -541,21 +615,36 @@ function renderRoomActions() {
   roomActionsEl.appendChild(ownRoomBtn);
 }
 
+// 「已敲門、等待回應」這句話顯示幾秒就自動收起來，不然會一直擋在地圖最上面，
+// 底下敲門請求本身還是繼續等對方回應，只是不用一直佔著畫面版面。
+let pendingKnockHideTimer = null;
+let pendingKnockHideForRoomId = null;
+
 function renderMyKnockStatus() {
   const status = myOutgoingKnock();
   if (!status) {
     myKnockStatusEl.hidden = true;
+    pendingKnockHideForRoomId = null;
     return;
   }
 
   myKnockStatusEl.hidden = false;
   if (status.status === "pending") {
     myKnockStatusEl.textContent = `已敲 ${memberName(status.roomId)} 的門，等待回應...`;
+    if (pendingKnockHideForRoomId !== status.roomId) {
+      pendingKnockHideForRoomId = status.roomId;
+      clearTimeout(pendingKnockHideTimer);
+      pendingKnockHideTimer = setTimeout(() => {
+        myKnockStatusEl.hidden = true;
+      }, 5000);
+    }
   } else if (status.status === "approved") {
+    pendingKnockHideForRoomId = null;
     myKnockStatusEl.textContent = `${memberName(status.roomId)} 讓你進來了！`;
     updatePosition(dormId, currentUid, status.roomId, 50, 50);
     deleteKnock(dormId, status.roomId, currentUid);
   } else if (status.status === "denied") {
+    pendingKnockHideForRoomId = null;
     myKnockStatusEl.textContent = `${memberName(status.roomId)} 現在不方便`;
     deleteKnock(dormId, status.roomId, currentUid);
   }

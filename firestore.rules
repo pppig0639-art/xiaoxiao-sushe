@@ -76,7 +76,10 @@ service cloud.firestore {
         allow read: if isDormMember(dormId);
         allow create: if isDormMember(dormId) &&
           (request.resource.data.ownerUid == request.auth.uid || request.resource.data.type == "common");
-        allow update: if isDormMember(dormId) && resource.data.ownerUid == request.auth.uid;
+        // 私人房間只有房主能改；客廳沒有單一房主，家具是大家共用的，任何寢室成員都能拖動擺放
+        allow update: if isDormMember(dormId) && (
+          resource.data.ownerUid == request.auth.uid || resource.data.type == "common"
+        );
 
         match /knocks/{requesterUid} {
           allow read: if isDormMember(dormId);
@@ -91,7 +94,9 @@ service cloud.firestore {
       }
 
       match /duties/{dutyId} {
-        allow read, write: if isDormMember(dormId);
+        allow read, create, delete: if isDormMember(dormId);
+        // 只有被指派的人自己可以打勾完成/取消完成，不然大家都能亂點別人的任務
+        allow update: if isDormMember(dormId) && resource.data.assignedUid == request.auth.uid;
       }
 
       match /messages/{messageId} {

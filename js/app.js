@@ -69,7 +69,7 @@ async function bootstrap(user) {
   listenActions(dormId);
 
   initMapView(dormId, user.uid);
-  initDutiesView(dormId, dorm ? dorm.mode : "shared");
+  initDutiesView(dormId, user.uid, dorm ? dorm.mode : "shared");
   initMessagesView(dormId, user.uid);
   initPetView(dormId, user.uid);
   initStatusControl(dormId, user.uid);

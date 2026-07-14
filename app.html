@@ -60,6 +60,10 @@
           <div id="decoration-options" class="decoration-options">
             <!-- views/decorations.js：可勾選的裝飾項目 -->
           </div>
+          <button id="toggle-furniture-edit-btn" type="button" class="furniture-edit-toggle">
+            開始擺放家具位置
+          </button>
+          <p class="furniture-edit-hint">開啟後才能拖曳家具，平常逛地圖不會不小心拖到</p>
         </div>
 
         <button id="edit-avatar-btn" type="button" class="link-btn">選擇我的角色</button>
@@ -115,6 +119,11 @@
     <button class="tab-btn" data-view="view-duties">輪值/留言</button>
     <button class="tab-btn" data-view="view-pet">寵物</button>
   </nav>
+
+  <div id="sleep-overlay" class="sleep-overlay" hidden>
+    <p>😴💤<br />zzz 睡個好覺</p>
+    <p class="sleep-overlay-hint">點一下畫面醒過來</p>
+  </div>
 
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/app.js"></script>

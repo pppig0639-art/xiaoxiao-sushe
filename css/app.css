@@ -209,32 +209,19 @@ body {
   filter: drop-shadow(0 3px 2px rgba(43, 38, 32, 0.25));
 }
 
-.furniture-bed {
-  height: 62%;
+/* 所有家具/裝飾品統一大小(避免床超大、檯燈超小這種比例很怪的狀況)，
+   位置各自獨立、可拖曳，中心點對齊(x,y)座標(見 .furniture-draggable / makeDraggable)。 */
+.furniture-bed,
+.furniture-sofa,
+.furniture-coffee-table,
+.furniture-rug {
+  height: 60px;
   transform: translate(-50%, -50%);
 }
 
-.furniture-sofa {
-  left: 58%;
-  bottom: 8%;
-  height: 46%;
-  z-index: 1;
-}
-
-.furniture-coffee-table {
-  left: 33%;
-  bottom: 6%;
-  height: 34%;
-}
-
 .furniture-rug {
-  left: 50%;
-  bottom: 2%;
-  height: 40%;
-  transform: translateX(-50%);
   filter: none;
   opacity: 0.9;
-  z-index: 0;
 }
 
 /* 小人物美術素材來自 Kenney.nl 的免費 CC0「Toon Characters」，每個人固定分配一種造型(見 map.js)。
@@ -471,22 +458,47 @@ body {
   object-fit: contain;
 }
 
+.furniture-edit-toggle {
+  margin-top: var(--space-3);
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.furniture-edit-toggle.is-active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.furniture-edit-hint {
+  margin: var(--space-1) 0 0;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+
 /* 裝飾品現在是各自獨立定位、可以拖曳的物件(見 .furniture-draggable)，
    不再是擠在左側的固定直排 —— 位置存在 rooms/{roomId}.furniturePositions。 */
 .room-decoration-chip {
   position: absolute;
   width: auto;
-  height: 36px;
+  height: 60px;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 2px 1px rgba(43, 38, 32, 0.2));
   z-index: 2;
 }
 
-/* 可拖曳的家具/裝飾品：只有房主在自己房間才拖得動(見 map.js 的 makeDraggable)，
+/* 可拖曳的家具/裝飾品：私人房間只有房主拖得動、客廳大家都能拖(見 map.js 的 makeDraggable)，
+   而且要先在「裝飾我的房間」面板按「開始擺放家具位置」才會真的能拖，平常逛地圖不會不小心拖到。
    touch-action:none 是為了讓手機上的拖曳手勢不會被瀏覽器當成頁面捲動。 */
 .furniture-draggable {
-  cursor: grab;
   touch-action: none;
+}
+
+.furniture-draggable.is-edit-mode {
+  cursor: grab;
+  outline: 2px dashed var(--color-primary);
+  outline-offset: 2px;
 }
 
 .furniture-draggable.is-dragging {
@@ -597,6 +609,51 @@ body {
 .pet-species-option.is-selected {
   border-color: var(--color-primary);
   background: #fff3e0;
+}
+
+/* 睡覺全螢幕遮罩：狀態變成 sleeping 就整頁蓋住，點一下醒過來(狀態改回 online)。
+   position:fixed 蓋住整個視窗，不管使用者在地圖/輪值/寵物哪個分頁都看得到。 */
+.sleep-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(10, 10, 24, 0.94);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+  font-size: 1.4rem;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.sleep-overlay-hint {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 走到床邊時冒出來的「休息/睡覺」選項 */
+.bed-prompt {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bed-prompt button {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  padding: var(--space-1) var(--space-2);
 }
 
 /* --- 底部 Tab Bar --- */

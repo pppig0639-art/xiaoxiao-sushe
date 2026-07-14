@@ -11,11 +11,13 @@ let autoAssignBtnEl = null;
 let taskInputEl = null;
 let formEl = null;
 let dormId = null;
+let currentUid = null;
 let mode = "shared";
 let pendingAutoAssign = false;
 
-export function initDutiesView(_dormId, _mode) {
+export function initDutiesView(_dormId, uid, _mode) {
   dormId = _dormId;
+  currentUid = uid;
   mode = _mode || "shared";
   listEl = document.getElementById("duty-list");
   formEl = document.getElementById("duty-form");
@@ -119,7 +121,14 @@ function renderDuties(duties) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = !!duty.isCompleted;
-    checkbox.addEventListener("change", () => markDone(dormId, duty.id, duty.assignedUid, checkbox.checked));
+    // 只有被指派的人自己能打勾完成，不然大家都亂點，任務算誰的就沒意義了
+    const isMine = duty.assignedUid === currentUid;
+    checkbox.disabled = !isMine;
+    if (!isMine) checkbox.title = "只有被指派的人可以打勾完成";
+    checkbox.addEventListener("change", () => {
+      if (!isMine) return;
+      markDone(dormId, duty.id, duty.assignedUid, checkbox.checked);
+    });
 
     label.appendChild(checkbox);
     const suffix = mode === "personal" ? "" : `（${assigneeName(duty.assignedUid)}）`;
